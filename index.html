@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SpineSafe">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%235b8fb9'/><text x='90' y='115' text-anchor='middle' font-size='96' fill='white'>S</text></svg>">
+  <title>Spine-Safe Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <h1 id="header-title">Today</h1>
+      <button id="header-action" class="header-btn hidden"></button>
+    </header>
+
+    <!-- Tab Content -->
+    <main id="main">
+      <!-- Today View -->
+      <section id="view-today" class="view active">
+        <div id="today-summary" class="card">
+          <div class="week-badge" id="week-badge">Week A</div>
+          <h2 id="today-workout-name">Push Day</h2>
+          <p id="today-workout-subtitle">Chest, Shoulders, Triceps</p>
+          <button id="btn-start" class="btn-primary">Start Workout</button>
+        </div>
+        <div id="today-stats" class="card">
+          <h3>Recent Progress</h3>
+          <div id="stats-content">No workouts logged yet</div>
+        </div>
+      </section>
+
+      <!-- Active Workout View -->
+      <section id="view-workout" class="view">
+        <div id="workout-timer" class="card timer-card">
+          <span id="timer-display">00:00</span>
+          <button id="btn-finish" class="btn-success">Finish Workout</button>
+        </div>
+        <div id="warmup-section"></div>
+        <div id="exercise-list"></div>
+        <div id="cooldown-section"></div>
+      </section>
+
+      <!-- History View -->
+      <section id="view-history" class="view">
+        <div id="history-list"></div>
+        <div id="history-empty" class="card empty-state">
+          <p>No workout history yet.</p>
+          <p>Complete your first workout to see it here.</p>
+        </div>
+      </section>
+
+      <!-- Manage View -->
+      <section id="view-manage" class="view">
+        <div class="card">
+          <h3>Workout Schedule</h3>
+          <div id="manage-schedule">
+            <label class="select-group">
+              <span>Current Week</span>
+              <select id="sel-week"><option value="A">Week A</option><option value="B">Week B</option></select>
+            </label>
+            <label class="select-group">
+              <span>Next Day</span>
+              <select id="sel-day">
+                <option value="0">Day 1 - Push</option>
+                <option value="1">Day 2 - Pull</option>
+                <option value="2">Day 3 - Legs</option>
+                <option value="3">Day 4 - Push</option>
+                <option value="4">Day 5 - Pull</option>
+                <option value="5">Day 6 - Legs</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Custom Exercises</h3>
+            <button id="btn-add-exercise" class="btn-small">+ Add</button>
+          </div>
+          <div id="custom-exercise-list"></div>
+        </div>
+        <div class="card">
+          <h3>Data</h3>
+          <button id="btn-export" class="btn-outline">Export History</button>
+          <button id="btn-clear" class="btn-danger">Clear All Data</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav id="nav">
+      <button class="nav-btn active" data-view="today">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Today</span>
+      </button>
+      <button class="nav-btn" data-view="history">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><polyline points="7 16 11 11 15 14 21 8"/></svg>
+        <span>History</span>
+      </button>
+      <button class="nav-btn" data-view="manage">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Add Exercise Modal -->
+    <div id="modal-add" class="modal hidden">
+      <div class="modal-content">
+        <h3>Add Exercise</h3>
+        <label class="select-group">
+          <span>Add to</span>
+          <select id="add-target">
+            <option value="A-push">Week A - Push</option>
+            <option value="A-pull">Week A - Pull</option>
+            <option value="A-legs">Week A - Legs</option>
+            <option value="B-push">Week B - Push</option>
+            <option value="B-pull">Week B - Pull</option>
+            <option value="B-legs">Week B - Legs</option>
+          </select>
+        </label>
+        <input id="add-name" type="text" placeholder="Exercise name" class="input">
+        <div class="input-row">
+          <input id="add-sets" type="number" placeholder="Sets" value="3" class="input input-sm">
+          <input id="add-reps" type="text" placeholder="Reps (e.g. 8-12)" class="input input-sm">
+        </div>
+        <input id="add-notes" type="text" placeholder="Notes / cues (optional)" class="input">
+        <div class="modal-actions">
+          <button id="btn-cancel-add" class="btn-outline">Cancel</button>
+          <button id="btn-confirm-add" class="btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Detail Modal -->
+    <div id="modal-detail" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="detail-title"></h3>
+        <div id="detail-content"></div>
+        <button id="btn-close-detail" class="btn-outline" style="margin-top:12px;width:100%">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
