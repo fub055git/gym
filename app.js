@@ -155,7 +155,7 @@ function renderToday() {
   $('#today-workout-subtitle').textContent = data.subtitle;
 
   if (history.length === 0) {
-    $('#stats-content').innerHTML = '<p style="color:var(--text-light);font-size:14px">No workouts logged yet. Start your first one!</p>';
+    $('#stats-content').innerHTML = '<p style="color:var(--text-light);font-size:17px">No workouts logged yet. Start your first one!</p>';
   } else {
     const total = history.length;
     const thisWeek = history.filter(h => {
@@ -186,6 +186,7 @@ function startWorkout() {
     dayIndex: schedule.dayIndex,
     type,
     startTime: Date.now(),
+    notes: '',
     exercises: exercises.map(ex => ({
       id: ex.id,
       name: ex.name,
@@ -286,6 +287,13 @@ function renderWorkoutExercises() {
         `).join('')}
       </div>
     </div>
+    <div class="section-label">Session Notes</div>
+    <div class="session-notes-card">
+      <label for="session-notes-input">How did it go?</label>
+      <textarea id="session-notes-input" class="session-notes-textarea"
+        placeholder="e.g. felt strong today, increased weight on shoulder press, right shoulder a bit tight..."
+        oninput="activeSession.notes = this.value">${activeSession.notes || ''}</textarea>
+    </div>
   `;
 }
 
@@ -340,6 +348,7 @@ function finishWorkout() {
     dayIndex: activeSession.dayIndex,
     type: activeSession.type,
     duration: elapsed,
+    notes: activeSession.notes || '',
     exercises: activeSession.exercises.map(e => ({
       id: e.id,
       name: e.name,
@@ -412,16 +421,19 @@ function showHistoryDetail(index) {
   const data = DEFAULT_EXERCISES[h.week][h.type];
 
   $('#detail-title').textContent = `Week ${h.week} • ${data.label} — ${formatDate(h.date)}`;
-  $('#detail-content').innerHTML = h.exercises.map(e => `
-    <div style="margin-bottom:12px">
-      <strong style="font-size:14px">${e.name}</strong>
-      ${e.sets.map((s, i) => `
-        <div style="font-size:13px;color:var(--text-light);padding:2px 0 2px 8px">
-          Set ${i + 1}: ${s.completed ? `${s.weight}kg × ${s.reps} reps ✓` : '— skipped'}
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
+  $('#detail-content').innerHTML = `
+    ${h.notes ? `<div class="detail-notes">${h.notes}</div>` : ''}
+    ${h.exercises.map(e => `
+      <div style="margin-bottom:12px">
+        <strong style="font-size:17px">${e.name}</strong>
+        ${e.sets.map((s, i) => `
+          <div style="font-size:15px;color:var(--text-light);padding:2px 0 2px 8px">
+            Set ${i + 1}: ${s.completed ? `${s.weight}kg × ${s.reps} reps ✓` : '— skipped'}
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+  `;
 
   $('#modal-detail').classList.remove('hidden');
 }
@@ -433,7 +445,7 @@ function renderManage() {
 
   const container = $('#custom-exercise-list');
   if (customExercises.length === 0) {
-    container.innerHTML = '<p style="font-size:13px;color:var(--text-light)">No custom exercises added yet.</p>';
+    container.innerHTML = '<p style="font-size:16px;color:var(--text-light)">No custom exercises added yet.</p>';
   } else {
     container.innerHTML = customExercises.map((c, i) => `
       <div class="custom-ex-item">
