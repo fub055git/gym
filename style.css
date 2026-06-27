@@ -49,7 +49,7 @@ header {
 }
 
 header h1 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -57,7 +57,7 @@ header h1 {
   background: none;
   border: none;
   color: var(--primary);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   padding: 6px 12px;
@@ -86,7 +86,7 @@ main {
 }
 
 .card h3 {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--text);
@@ -121,14 +121,14 @@ main {
 }
 
 #today-summary h2 {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   margin-bottom: 4px;
 }
 
 #today-workout-subtitle {
   color: var(--text-light);
-  font-size: 14px;
+  font-size: 16px;
   margin-bottom: 20px;
 }
 
@@ -153,7 +153,7 @@ main {
   border: none;
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -163,7 +163,7 @@ main {
   border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
@@ -176,7 +176,7 @@ main {
   border: 1.5px solid var(--danger);
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--danger);
   cursor: pointer;
@@ -189,7 +189,7 @@ main {
   border: none;
   border-radius: 8px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -227,13 +227,13 @@ main {
 }
 
 .exercise-header .ex-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   flex: 1;
 }
 
 .exercise-header .ex-meta {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-light);
   white-space: nowrap;
 }
@@ -273,7 +273,7 @@ main {
 .exercise-body.open { display: block; }
 
 .exercise-notes {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-light);
   line-height: 1.5;
   margin-bottom: 12px;
@@ -291,7 +291,7 @@ main {
 }
 
 .set-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-light);
   width: 24px;
@@ -303,7 +303,7 @@ main {
   padding: 8px 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
   background: var(--bg);
   color: var(--text);
@@ -319,7 +319,7 @@ main {
 .set-input::placeholder { color: #c0c8d0; }
 
 .set-unit {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-light);
   width: 24px;
 }
@@ -387,7 +387,7 @@ main {
 }
 
 .routine-header .name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -407,7 +407,7 @@ main {
 .routine-item {
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -434,7 +434,7 @@ nav {
   background: none;
   border: none;
   color: var(--text-light);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: color 0.15s;
@@ -463,13 +463,13 @@ nav {
 }
 
 .history-item .hi-left h4 {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .history-item .hi-left p {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-light);
 }
 
@@ -478,12 +478,12 @@ nav {
 }
 
 .history-item .hi-right .hi-date {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-light);
 }
 
 .history-item .hi-right .hi-duration {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--primary);
   font-weight: 600;
 }
@@ -511,7 +511,7 @@ nav {
 }
 
 .stat-item .stat-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-light);
   margin-top: 2px;
 }
@@ -595,7 +595,7 @@ nav {
 .select-group:last-child { border-bottom: none; }
 
 .select-group span {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
 }
 
@@ -603,7 +603,7 @@ nav {
   padding: 6px 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   background: var(--bg);
   color: var(--text);
   -webkit-appearance: none;
@@ -616,13 +616,13 @@ nav {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .custom-ex-item:last-child { border-bottom: none; }
 
 .custom-ex-item .cex-info { flex: 1; }
-.custom-ex-item .cex-info small { color: var(--text-light); display: block; font-size: 12px; }
+.custom-ex-item .cex-info small { color: var(--text-light); display: block; font-size: 14px; }
 
 .custom-ex-remove {
   background: none;
@@ -637,7 +637,7 @@ nav {
 
 /* Previous weight hint */
 .prev-weight {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-light);
   padding: 2px 0 4px;
 }
