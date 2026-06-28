@@ -109,6 +109,8 @@ let customExercises = load('custom', []);
 let activeSession = null;
 let timerInterval = null;
 let timerStart = 0;
+let restInterval = null;
+let restRemaining = 0;
 
 // ── Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
@@ -170,7 +172,7 @@ function renderConstraints() {
 function toggleConstraints(header) {
   const body = header.nextElementSibling;
   body.classList.toggle('open');
-  header.querySelector('.chevron').style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+  header.querySelector('.chevron').style.transform = body.classList.contains('open') ? '' : 'rotate(180deg)';
 }
 
 // ── Today View ───────────────────────────────────────────────
@@ -245,6 +247,40 @@ function showWorkoutView() {
 function updateTimer() {
   const elapsed = Math.floor((Date.now() - timerStart) / 1000);
   $('#timer-display').textContent = formatDuration(elapsed);
+}
+
+function startRestTimer() {
+  clearInterval(restInterval);
+  restRemaining = 90;
+  renderRestTimer();
+  restInterval = setInterval(() => {
+    restRemaining--;
+    if (restRemaining <= 0) {
+      clearInterval(restInterval);
+      restRemaining = 0;
+    }
+    renderRestTimer();
+  }, 1000);
+}
+
+function skipRestTimer() {
+  clearInterval(restInterval);
+  restRemaining = 0;
+  renderRestTimer();
+}
+
+function renderRestTimer() {
+  const el = $('#rest-timer');
+  if (!el) return;
+  if (restRemaining <= 0) {
+    el.classList.add('hidden');
+  } else {
+    el.classList.remove('hidden');
+    $('#rest-countdown').textContent = formatDuration(restRemaining);
+    const pct = (restRemaining / 90) * 100;
+    $('#rest-bar-fill').style.width = pct + '%';
+    $('#rest-bar-fill').style.background = restRemaining <= 15 ? 'var(--success)' : 'var(--primary)';
+  }
 }
 
 function renderWorkoutExercises() {
@@ -345,8 +381,9 @@ function toggleSet(ei, si) {
   if (!activeSession) return;
   const set = activeSession.exercises[ei].sets[si];
   set.completed = !set.completed;
+  if (set.completed) startRestTimer();
+  else { clearInterval(restInterval); restRemaining = 0; }
   renderWorkoutExercises();
-  // Re-open the exercise that was being edited
   const body = $(`#ex-body-${ei}`);
   if (body) body.classList.add('open');
 }
@@ -369,6 +406,8 @@ function finishWorkout() {
 
   const elapsed = Math.floor((Date.now() - timerStart) / 1000);
   clearInterval(timerInterval);
+  clearInterval(restInterval);
+  restRemaining = 0;
 
   const record = {
     date: new Date().toISOString(),
@@ -396,6 +435,8 @@ function finishWorkout() {
 function cancelWorkout() {
   if (activeSession && !confirm('Cancel this workout? Progress will be lost.')) return;
   clearInterval(timerInterval);
+  clearInterval(restInterval);
+  restRemaining = 0;
   activeSession = null;
   $('nav').style.display = 'flex';
   showView('today');
@@ -519,11 +560,15 @@ function addCustomExercise() {
 
 function exportHistory() {
   if (history.length === 0) { alert('No history to export.'); return; }
-  const lines = ['Date,Week,Type,Exercise,Set,Weight(kg),Reps,Completed'];
+  const lines = ['Date,Week,Day,Session Type,Exercise,Set,Weight (kg),Reps,Completed,Duration (s),Notes'];
   history.forEach(h => {
+    const dayLabel = DAY_LABELS[h.dayIndex] || '';
+    const dateStr = new Date(h.date).toISOString().slice(0, 10);
     h.exercises.forEach(e => {
       e.sets.forEach((s, i) => {
-        lines.push(`${h.date},${h.week},${h.type},${e.name},${i + 1},${s.weight},${s.reps},${s.completed}`);
+        const notes = i === 0 ? `"${(h.notes || '').replace(/"/g, '""')}"` : '';
+        const duration = i === 0 ? h.duration : '';
+        lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${e.name},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}`);
       });
     });
   });

@@ -36,9 +36,10 @@
         <div class="card constraints-card">
           <div class="constraints-header" onclick="toggleConstraints(this)">
             <span class="constraints-title">Session Constraints</span>
-            <span class="chevron">▼</span>
+            <span class="constraints-read">READ BEFORE STARTING</span>
+            <span class="chevron constraints-chevron">▲</span>
           </div>
-          <div class="constraints-body" id="constraints-body"></div>
+          <div class="constraints-body open" id="constraints-body"></div>
         </div>
       </section>
 
@@ -47,6 +48,14 @@
         <div id="workout-timer" class="card timer-card">
           <span id="timer-display">00:00</span>
           <button id="btn-finish" class="btn-success">Finish Workout</button>
+        </div>
+        <div id="rest-timer" class="card rest-timer-card hidden" onclick="skipRestTimer()">
+          <div class="rest-top">
+            <span class="rest-label">REST</span>
+            <span id="rest-countdown">1:30</span>
+            <span class="rest-skip">tap to skip</span>
+          </div>
+          <div class="rest-bar"><div id="rest-bar-fill" class="rest-bar-fill"></div></div>
         </div>
         <div id="warmup-section"></div>
         <div id="exercise-list"></div>
@@ -102,7 +111,7 @@
     <!-- Bottom Nav -->
     <nav id="nav">
       <button class="nav-btn active" data-view="today">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h2v5H3z"/><path d="M19 9.5h2v5h-2z"/><path d="M5 12h14"/></svg>
         <span>Today</span>
       </button>
       <button class="nav-btn" data-view="history">
