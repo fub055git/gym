@@ -1,44 +1,58 @@
 // ── Workout Data ──────────────────────────────────────────────
+const CONSTRAINTS = [
+  'No axial loading — nothing compressing down through the spine.',
+  'No loaded forward hinging — torso stays supported or vertical under load.',
+  'Overhead pressing: Arnold press only. No other overhead movement until cleared.',
+  'Left side governs. Set the weight the left shoulder/arm controls cleanly. Right matches, never exceeds.',
+  'Submaximal always: 2–3 reps in reserve. Never train to failure.',
+  'Loaded squats: on hold. Not in this program until Body Applications clears them.',
+  'Cable pull-through and machine hip thrust are re-entry probes, not progressions. Light, controlled, stop and report if anything pulls.',
+  'Machine chest press baseline: 18kg, 3×10. Hold until four clean sets with the left blade keeping position. Only then add the smallest increment.',
+];
+
 const DEFAULT_EXERCISES = {
   warmup: [
-    { id: 'wu1', name: 'Cat-Cow', reps: '10 reps', notes: 'On all fours, gently arch and round your back. Move fluidly; do not force the end ranges.' },
-    { id: 'wu2', name: 'Bird-Dog', reps: '8 reps per side', notes: 'On all fours, extend opposite arm and leg. Keep hips perfectly level. Imagine a hot cup of coffee on your lower back.' },
-    { id: 'wu3', name: 'Dead Bug', reps: '10 reps per side', notes: 'Lying flat, press lower back into the floor while extending opposite limbs.' },
+    { id: 'wu1', name: 'Cat-Cow', reps: '8–10 reps', notes: 'Move segmentally — bring the thoracic spine into it vertebra by vertebra, not just the lower back. Slow and fluid.' },
+    { id: 'wu2', name: 'Bird-Dog', reps: '8 reps per side', notes: 'Opposite arm and leg, hips dead level. Brace as if balancing a full cup on your lower back.' },
+    { id: 'wu3', name: 'Dead Bug', reps: '10 reps per side', notes: 'Lower back pressed firmly into the floor while opposite limbs extend.' },
+    { id: 'wu4', name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Back to wall, arms in a goalpost, slide up and down keeping wrists and elbows on the wall. Direct prep for the scapular stabilisers.' },
   ],
   cooldown: [
-    { id: 'cd1', name: "Child's Pose", reps: '1-2 min', notes: 'Sit back on heels, extend arms forward, breathe deeply into your belly.' },
-    { id: 'cd2', name: 'Glute Figure-4 Stretch', reps: '1 min per side', notes: 'Lying on back, cross ankle over opposite knee, pull back gently.' },
+    { id: 'cd1', name: "Child's Pose", reps: '1–2 min', notes: 'Sit back on heels, arms forward, breathe into the belly.' },
+    { id: 'cd2', name: 'Glute Figure-4 Stretch', reps: '1 min per side', notes: 'Ankle over opposite knee, draw back gently.' },
+    { id: 'cd3', name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Forearm on the frame, step through. Opens the chest so the blade can sit back where it should.' },
   ],
   A: {
     push: {
       label: 'Push',
       subtitle: 'Chest, Shoulders, Triceps',
       exercises: [
-        { id: 'ap1', name: 'Incline Dumbbell Press', sets: 3, reps: '8-12', notes: 'Bench at 30°. Squeeze shoulder blades into the bench. Push yourself into the bench, not just the weights up.' },
-        { id: 'ap2', name: 'Seated Dumbbell Shoulder Press', sets: 3, reps: '10-12', notes: 'Keep entire spine flat against the seat pad. If lower back flares away, the weight is too heavy.' },
-        { id: 'ap3', name: 'Cable Chest Flyes', sets: 3, reps: '12-15', notes: 'Staggered stance for a stable base. Keeps torso upright without spine strain.' },
-        { id: 'ap4', name: 'Cable Tricep Pushdowns', sets: 3, reps: '12-15', notes: 'Pin elbows firmly to your ribs. Prevents using lower back to swing momentum.' },
+        { id: 'ap1', name: 'Machine Chest Press', sets: 3, reps: '10 @ 18kg', notes: 'Left shoulder blade must stay set against the pad for the entire set. The moment it lifts or slides forward, the set is done and the weight stays. Progression gate: four clean sets with the left blade holding before the smallest increment goes on.' },
+        { id: 'ap2', name: 'Arnold Press', sets: 3, reps: '10–12', notes: 'Seated, back supported. Only cleared overhead movement. Start palms facing you at chin height, rotate as you press, stop short of a hard lock-out. Spine flat to the pad — if the lower back flares off it, the weight is too heavy.' },
+        { id: 'ap3', name: 'Pec Deck', sets: 3, reps: '12–15', notes: 'Back flat to the pad, squeeze at the front, control the return.' },
+        { id: 'ap4', name: 'Cable Tricep Pushdown', sets: 3, reps: '12–15', notes: 'Elbows pinned to the ribs, full extension at lockout, brief hold at the bottom. Run the fourth set before adding any weight.' },
       ]
     },
     pull: {
       label: 'Pull',
       subtitle: 'Back, Biceps',
       exercises: [
-        { id: 'apl1', name: 'Lat Pulldown', sets: 3, reps: '8-12', notes: 'Pull toward upper chest, lean back from hips not lower back. Pull with elbows—slide them into your back pockets.' },
-        { id: 'apl2', name: 'Chest-Supported Machine Row', sets: 3, reps: '10-12', notes: 'Sternum glued to pad. Let weight pull shoulder blades forward for stretch, then squeeze them together.' },
-        { id: 'apl3', name: 'Face Pulls', sets: 3, reps: '15', notes: 'Targets rear delts and rotator cuff. Pull rope toward forehead, separate hands at the end.' },
-        { id: 'apl4', name: 'Incline Dumbbell Bicep Curls', sets: 3, reps: '10-12', notes: '45° incline keeps torso fixed, preventing the bicep curl body swing.' },
+        { id: 'apl1', name: 'Lat Pulldown', sets: 3, reps: '10–12', notes: 'Slight lean from the hips only, never from the lower back. Pull the elbows down toward your back pockets, not with the hands.' },
+        { id: 'apl2', name: 'Chest-Supported Machine Row', sets: 3, reps: '10–12', notes: 'Sternum glued to the pad. Let the blades open at the front, then drive the elbows back and squeeze. Your main scapular-retraction work.' },
+        { id: 'apl3', name: 'Face Pulls', sets: 3, reps: '15', notes: 'Rear delts, rotator cuff, scapular stabilisers — your primary live rehab target. Pull the rope to the forehead, separate the hands at the end.' },
+        { id: 'apl4', name: 'Incline Dumbbell Curl', sets: 3, reps: '10–12', notes: 'Seated 45° incline fixes the torso and kills the swing. The left arm sets the weight.' },
       ]
     },
     legs: {
       label: 'Legs',
-      subtitle: 'Legs & Functional Core',
+      subtitle: 'Legs & Core',
       exercises: [
-        { id: 'al1', name: 'Leg Press', sets: 3, reps: '10-12', notes: 'CRITICAL: Do not let lower back lift off the seat pad. Only go as deep as you can keep back flat.' },
-        { id: 'al2', name: 'Goblet Squats', sets: 3, reps: '8-12', notes: 'Dumbbell at chest acts as counterbalance, keeps core upright naturally.' },
-        { id: 'al3', name: 'Leg Extensions', sets: 3, reps: '12-15', notes: 'Isolates quads with zero back strain.' },
-        { id: 'al4', name: 'Seated Leg Curls', sets: 3, reps: '12-15', notes: 'Isolates hamstrings with zero back strain.' },
-        { id: 'al5', name: 'Suitcase Carries', sets: 3, reps: '30m per side', notes: 'One heavy dumbbell, one hand. Keep shoulders level—don\'t lean. Core works to keep you upright.' },
+        { id: 'al1', name: 'Leg Press', sets: 3, reps: '10–12', notes: 'Lower back must not round or lift off the pad at the bottom. Control the depth — only as deep as the back stays flat. Reduce range before you reduce form.' },
+        { id: 'al2', name: 'Seated Leg Curl', sets: 3, reps: '12–15', notes: 'Back supported, hamstrings isolated, zero spinal load.' },
+        { id: 'al3', name: 'Leg Extension', sets: 3, reps: '12–15', notes: 'Quads isolated, no back involvement. Control the eccentric.' },
+        { id: 'al4', name: 'Cable Pull-Through', sets: 2, reps: '12–15', probe: true, notes: 'RE-ENTRY PROBE — not a progression. Hips reach back to the wall behind you, spine dead straight, squeeze the glutes to stand. Stop immediately if anything pulls in the lower back and report the sensation and location to Body Applications.' },
+        { id: 'al5', name: 'Seated Calf Raise', sets: 3, reps: '15', notes: 'Seated keeps the load off the spine. Avoid standing calf raises — they load axially.' },
+        { id: 'al6', name: 'Pallof Press', sets: 3, reps: '10 per side', notes: 'Side-on to a chest-height cable, press straight out, resist the twist. Anti-rotation — a built-in belt for the spine.' },
       ]
     }
   },
@@ -47,31 +61,32 @@ const DEFAULT_EXERCISES = {
       label: 'Push',
       subtitle: 'Chest, Shoulders, Triceps',
       exercises: [
-        { id: 'bp1', name: 'Flat Dumbbell Bench Press', sets: 3, reps: '8-12', notes: 'Feet flat on floor (or on plates). Keep shoulder blades pinned back and down.' },
-        { id: 'bp2', name: 'Standing Cable Shoulder Press', sets: 3, reps: '10-12', notes: 'Staggered stance, squeeze glutes to lock pelvis. Cable tension eliminates spinal compression.' },
-        { id: 'bp3', name: 'Pec Deck Machine Flyes', sets: 3, reps: '12-15', notes: 'Back fully supported against pad. Focus on bringing biceps together at peak.' },
-        { id: 'bp4', name: 'Overhead Cable Tricep Extensions', sets: 3, reps: '12-15', notes: 'Face away from machine. Brace core to prevent lower back arch.' },
+        { id: 'bp1', name: 'Machine Chest Press', sets: 3, reps: '10 @ 18kg', notes: 'Same rule as Week A — left blade holds position or the set ends. Anchor lift across both weeks; keep it consistent for tracking.' },
+        { id: 'bp2', name: 'Arnold Press', sets: 3, reps: '10–12', notes: 'Seated, back supported. Controlled rotation, no aggressive lock-out, spine flat to the pad.' },
+        { id: 'bp3', name: 'Cable Fly (high pulley)', sets: 3, reps: '12–15', notes: 'High-to-low arc to bias the lower pec. Staggered stance for a stable base, torso upright, no spinal strain.' },
+        { id: 'bp4', name: 'Single-Arm Cable Pushdown', sets: 3, reps: '12–15 per side', notes: 'Left side sets the working weight. Elbow pinned, full extension at lockout. Single-arm exposes the side-to-side difference the bar hides.' },
       ]
     },
     pull: {
       label: 'Pull',
       subtitle: 'Back, Biceps',
       exercises: [
-        { id: 'bpl1', name: 'Single-Arm Dumbbell Row', sets: 3, reps: '8-12 per side', notes: 'One knee + hand on bench for three-point support. Pull dumbbell toward hip in a sweeping arc.' },
-        { id: 'bpl2', name: 'Wide-Grip Cable Seated Row', sets: 3, reps: '10-12', notes: 'Knees slightly bent. Keep spine tall—don\'t rock. Pull elbows back wide for upper back.' },
-        { id: 'bpl3', name: 'Straight-Arm Cable Pulldowns', sets: 3, reps: '12-15', notes: 'Slight hip hinge, flat back. Push bar to thighs with locked arms. Isolates lats without bicep help.' },
-        { id: 'bpl4', name: 'Seated Hammer Curls', sets: 3, reps: '10-12', notes: 'Neutral grip (palms facing). Seated position removes spinal swinging.' },
+        { id: 'bpl1', name: 'Lat Pulldown (close/neutral grip)', sets: 3, reps: '10–12', notes: 'Grip variation from Week A. Same rule — lean from the hips only, drive with the elbows.' },
+        { id: 'bpl2', name: 'Seated Cable Row', sets: 3, reps: '10–12', notes: 'Torso stays vertical and locked the entire set. Do NOT lean forward and rock back under load. Let the blades open with the torso still, then pull the elbows back. If you can\'t keep the torso fixed, revert to the chest-supported row.' },
+        { id: 'bpl3', name: 'Face Pulls', sets: 3, reps: '15', notes: 'Repeated by design — scapular stabilisers are the priority, they get worked both weeks. Pull to the forehead, separate the hands at the end.' },
+        { id: 'bpl4', name: 'Seated Hammer Curl', sets: 3, reps: '10–12', notes: 'Neutral grip, seated to remove the swing. Left arm governs.' },
       ]
     },
     legs: {
       label: 'Legs',
-      subtitle: 'Legs & Functional Core',
+      subtitle: 'Legs & Core',
       exercises: [
-        { id: 'bl1', name: 'Hack Squat Machine', sets: 3, reps: '8-12', notes: 'Back against angled pad. Feet higher on platform for glutes/hams emphasis.' },
-        { id: 'bl2', name: 'Cable Pull-Throughs', sets: 3, reps: '12-15', notes: 'Deadlift substitute. Hip hinge with low cable. Spine stays straight, squeeze glutes to stand.' },
-        { id: 'bl3', name: 'Lying Leg Curls', sets: 3, reps: '12-15', notes: 'Lying flat ensures lower back is unloaded while isolating hamstrings.' },
-        { id: 'bl4', name: 'Calf Raises', sets: 3, reps: '12-15', notes: 'Seated or standing machine.' },
-        { id: 'bl5', name: 'Pallof Press', sets: 3, reps: '10 per side', notes: 'Sideways to cable, press handle out from chest. Stay rigid—builds anti-rotation core strength.' },
+        { id: 'bl1', name: 'Leg Press', sets: 3, reps: '10–12', notes: 'Same as Week A — back flat to the pad, control the depth, range before form.' },
+        { id: 'bl2', name: 'Lying Leg Curl', sets: 3, reps: '12–15', notes: 'Lying flat unloads the lower back entirely while isolating the hamstrings.' },
+        { id: 'bl3', name: 'Leg Extension', sets: 3, reps: '12–15', notes: 'Quads isolated, controlled eccentric.' },
+        { id: 'bl4', name: 'Machine Hip Thrust', sets: 2, reps: '12–15', probe: true, notes: 'RE-ENTRY PROBE — not a progression. Controlled tempo, full squeeze at the top, ribs down. Stop and report if anything pulls. Do not load this up as a main lift.' },
+        { id: 'bl5', name: 'Seated Calf Raise', sets: 3, reps: '15', notes: 'Seated keeps the load off the spine.' },
+        { id: 'bl6', name: 'Pallof Press', sets: 3, reps: '10 per side', notes: 'Anti-rotation, stay rigid against the twist.' },
       ]
     }
   }
@@ -137,6 +152,7 @@ function showView(name) {
   if (name === 'today') {
     $('#header-title').textContent = 'Today';
     renderToday();
+    renderConstraints();
   } else if (name === 'history') {
     $('#header-title').textContent = 'History';
     renderHistory();
@@ -144,6 +160,17 @@ function showView(name) {
     $('#header-title').textContent = 'Settings';
     renderManage();
   }
+}
+
+// ── Constraints ──────────────────────────────────────────────
+function renderConstraints() {
+  $('#constraints-body').innerHTML = CONSTRAINTS.map(c => `<div class="constraint-item">${c}</div>`).join('');
+}
+
+function toggleConstraints(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+  header.querySelector('.chevron').style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
 }
 
 // ── Today View ───────────────────────────────────────────────
@@ -191,6 +218,7 @@ function startWorkout() {
       id: ex.id,
       name: ex.name,
       notes: ex.notes,
+      probe: ex.probe || false,
       targetSets: ex.sets,
       targetReps: ex.reps,
       sets: Array.from({ length: ex.sets }, () => ({ weight: 0, reps: 0, completed: false }))
@@ -247,9 +275,9 @@ function renderWorkoutExercises() {
     const card = document.createElement('div');
     card.className = 'exercise-card';
     card.innerHTML = `
-      <div class="exercise-header" onclick="toggleExercise(${ei})">
+      <div class="exercise-header ${ex.probe ? 'probe-header' : ''}" onclick="toggleExercise(${ei})">
         <div class="ex-check ${allDone ? 'done' : ''}"></div>
-        <span class="ex-name">${ex.name}</span>
+        <span class="ex-name">${ex.name}${ex.probe ? ' <span class="probe-badge">PROBE</span>' : ''}</span>
         <span class="ex-meta">${ex.targetSets}×${ex.targetReps}</span>
       </div>
       <div class="exercise-body" id="ex-body-${ei}">
