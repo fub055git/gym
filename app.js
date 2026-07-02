@@ -12,34 +12,43 @@ const CONSTRAINTS = [
 
 const WARMUP = {
   push: [
-    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Move segmentally through the thoracic spine. Slow and fluid — wakes up the spine before pressing.' },
-    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Back to wall, arms goalpost, slide up and down. Direct prep for scapular stability in the press and Arnold press.' },
-    { name: 'Dead Bug', reps: '10 reps per side', notes: 'Lower back firmly into the floor, extend opposite limbs. Pre-activates the core brace you need to keep the spine flat during pressing.' },
+    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Segmental — bring the thoracic spine in vertebra by vertebra, not just the lower back. Slow and fluid. Spine baseline before any pressing.' },
+    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Back to wall, arms in goalpost, slide up and down keeping wrists and elbows on the wall. Direct activation of the stabilisers you\'re about to load.' },
+    { name: 'Band Pull-Apart or Light Cable Face Pull', reps: '15 reps', notes: 'Rear delts and external rotators awake before the chest press. If no band, do the face pull machine at minimal weight.' },
+    { name: 'Shoulder CARs', reps: '5 reps each direction per side', notes: 'Controlled articular rotations — slow full circles at the shoulder joint, active not passive. Lubricates the joint before load.' },
+    { name: 'Dead Bug', reps: '8 reps per side', notes: 'Low back flat to the floor, opposite limbs extend. Core pre-activation before pressing.' },
   ],
   pull: [
-    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Thoracic mobility before rows and pulldowns. Move vertebra by vertebra, not just the lower back.' },
-    { name: 'Bird-Dog', reps: '8 reps per side', notes: 'Opposite arm and leg, hips dead level. Activates the same posterior chain muscles that support your row position.' },
-    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Primes the scapular retractors before the chest-supported row and face pulls. This is the exact motion you will be repeating under load.' },
+    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Thoracic mobility first — the thoracic spine is where lat pulldown and row force actually transfers. Segmental, slow.' },
+    { name: 'Thoracic Extension over Foam Roller or Chair Back', reps: '8–10 reps', notes: 'Hands behind the head, extend gently over the roller at mid-back. Opens the thoracic without touching the lumbar. If no roller, use a chair back at shoulder-blade height.' },
+    { name: 'Band Pull-Apart or Light Cable Face Pull', reps: '15 reps', notes: 'Rear delts and scapular retractors pre-activated before the main row work.' },
+    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Same as Push day — the scapular stabilisers are the limiting factor across both sessions; they need direct prep every time.' },
+    { name: 'Dead Bug', reps: '8 reps per side', notes: 'Core pre-activation. Especially relevant for lat pulldown where the torso lean temptation is real.' },
   ],
   legs: [
-    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Lumbar prep before the leg press. Ensures the lower back is mobile and aware before it goes against the pad.' },
-    { name: 'Bird-Dog', reps: '8 reps per side', notes: 'Glute and hip activation. Wakes up the same muscles driving the leg press and pull-through.' },
-    { name: 'Dead Bug', reps: '10 reps per side', notes: 'Core pre-activation before the Pallof press and leg work. Reinforces the lower back flat position you need throughout the session.' },
+    { name: 'Supine Knee-to-Chest', reps: '8 reps per side', notes: 'Lying on your back, pull one knee to the chest, hold 2–3 seconds, release. Hip flexor and low back release before any leg loading.' },
+    { name: 'Glute Bridge (bodyweight)', reps: '12–15 reps', notes: 'Feet flat, drive the hips up, squeeze at the top, controlled down. Glutes activated before the leg press. If the glutes aren\'t firing, the low back compensates.' },
+    { name: 'Clamshell', reps: '12 reps per side', notes: 'Side-lying, feet together, rotate the top knee up like a clamshell opening. Hip abductor and glute med activation — directly relevant to leg press tracking.' },
+    { name: 'Ankle Circles', reps: '10 reps each direction per foot', notes: 'Dorsiflexion restriction is your main deep squat limiter — prep the ankle before leg press even though range is managed.' },
+    { name: 'Cat-Cow', reps: '8 reps', notes: 'Spine baseline, same as every session. Especially relevant before leg press where lumbar position is the critical variable.' },
   ],
 };
 
 const COOLDOWN = {
   push: [
-    { name: "Child's Pose", reps: '1–2 min', notes: 'Decompresses the spine after pressing. Breathe into the belly.' },
-    { name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Forearm on the frame, step through. Opens the chest so the blade can sit back where it belongs — essential after any pressing work.' },
+    { name: 'Doorway Pec Stretch', reps: '45s per side', notes: 'Forearm on the frame, step through. Pec minor and anterior shoulder — exactly what shortens under chest press and fly load.' },
+    { name: 'Cross-Body Shoulder Stretch', reps: '30s per side', notes: 'Pull the arm across the chest, keep the shoulder down. Posterior capsule release.' },
+    { name: "Child's Pose", reps: '1 min', notes: 'Decompress the spine, breathe into the belly. Counter the extension bias of pressing.' },
   ],
   pull: [
-    { name: "Child's Pose", reps: '1–2 min', notes: 'Opens the lats after pulldowns and rows. Arms forward, breathe into the belly.' },
-    { name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Allows full retraction range by opening the chest. Keeps the gains from face pulls by counteracting any residual tightness.' },
+    { name: 'Doorway Bicep Stretch', reps: '30s per side', notes: 'Arm extended behind you at shoulder height, palm flat on a wall, rotate away. Lengthens the bicep and anterior shoulder after curls.' },
+    { name: 'Thread-the-Needle', reps: '5 reps per side', notes: 'On hands and knees, thread one arm under the body and rotate — thoracic rotation and release. Undoes the retraction tension from rows.' },
+    { name: "Child's Pose", reps: '1 min', notes: 'Lats and thoracic decompress fully in this position. Hold longer if the upper back feels tight.' },
   ],
   legs: [
-    { name: "Child's Pose", reps: '1–2 min', notes: 'Hip flexor and lower back release after the leg press and hinge work. Breathe into the belly.' },
-    { name: 'Glute Figure-4 Stretch', reps: '1 min per side', notes: 'Ankle over opposite knee, draw back gently. Releases the glutes and deep hip rotators after the leg session.' },
+    { name: 'Half-Kneeling Hip Flexor Stretch', reps: '45s per side', notes: 'One knee down, drive the hips forward gently, posterior pelvic tilt to deepen. Hip flexors shorten under leg press load and sitting — this is the primary release.' },
+    { name: 'Glute Figure-4 Stretch', reps: '45s per side', notes: 'Lying on your back, ankle over opposite knee, draw back. Piriformis and glute release after leg work.' },
+    { name: 'Spinal Twist (Supine)', reps: '30s per side', notes: 'Knees to one side, arms out, breathe into the rotation. Lumbar decompression after leg press load on the low back.' },
   ],
 };
 
@@ -311,7 +320,7 @@ function renderWorkoutExercises() {
 
   // Warmup
   $('#warmup-section').innerHTML = `
-    <div class="section-label">Warm-Up (5–8 min)</div>
+    <div class="section-label">Warm-Up (6–8 min)</div>
     <div class="routine-card">
       <div class="routine-header" onclick="toggleRoutine(this)">
         <span class="name">Warm-Up Routine</span>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spine-safe-v6';
+const CACHE_NAME = 'spine-safe-v7';
 const ASSETS = ['./index.html', './style.css', './app.js'];
 
 self.addEventListener('install', e => {
