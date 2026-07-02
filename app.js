@@ -10,18 +10,40 @@ const CONSTRAINTS = [
   'Machine chest press baseline: 18kg, 3×10. Hold until four clean sets with the left blade keeping position. Only then add the smallest increment.',
 ];
 
+const WARMUP = {
+  push: [
+    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Move segmentally through the thoracic spine. Slow and fluid — wakes up the spine before pressing.' },
+    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Back to wall, arms goalpost, slide up and down. Direct prep for scapular stability in the press and Arnold press.' },
+    { name: 'Dead Bug', reps: '10 reps per side', notes: 'Lower back firmly into the floor, extend opposite limbs. Pre-activates the core brace you need to keep the spine flat during pressing.' },
+  ],
+  pull: [
+    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Thoracic mobility before rows and pulldowns. Move vertebra by vertebra, not just the lower back.' },
+    { name: 'Bird-Dog', reps: '8 reps per side', notes: 'Opposite arm and leg, hips dead level. Activates the same posterior chain muscles that support your row position.' },
+    { name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Primes the scapular retractors before the chest-supported row and face pulls. This is the exact motion you will be repeating under load.' },
+  ],
+  legs: [
+    { name: 'Cat-Cow', reps: '8–10 reps', notes: 'Lumbar prep before the leg press. Ensures the lower back is mobile and aware before it goes against the pad.' },
+    { name: 'Bird-Dog', reps: '8 reps per side', notes: 'Glute and hip activation. Wakes up the same muscles driving the leg press and pull-through.' },
+    { name: 'Dead Bug', reps: '10 reps per side', notes: 'Core pre-activation before the Pallof press and leg work. Reinforces the lower back flat position you need throughout the session.' },
+  ],
+};
+
+const COOLDOWN = {
+  push: [
+    { name: "Child's Pose", reps: '1–2 min', notes: 'Decompresses the spine after pressing. Breathe into the belly.' },
+    { name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Forearm on the frame, step through. Opens the chest so the blade can sit back where it belongs — essential after any pressing work.' },
+  ],
+  pull: [
+    { name: "Child's Pose", reps: '1–2 min', notes: 'Opens the lats after pulldowns and rows. Arms forward, breathe into the belly.' },
+    { name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Allows full retraction range by opening the chest. Keeps the gains from face pulls by counteracting any residual tightness.' },
+  ],
+  legs: [
+    { name: "Child's Pose", reps: '1–2 min', notes: 'Hip flexor and lower back release after the leg press and hinge work. Breathe into the belly.' },
+    { name: 'Glute Figure-4 Stretch', reps: '1 min per side', notes: 'Ankle over opposite knee, draw back gently. Releases the glutes and deep hip rotators after the leg session.' },
+  ],
+};
+
 const DEFAULT_EXERCISES = {
-  warmup: [
-    { id: 'wu1', name: 'Cat-Cow', reps: '8–10 reps', notes: 'Move segmentally — bring the thoracic spine into it vertebra by vertebra, not just the lower back. Slow and fluid.' },
-    { id: 'wu2', name: 'Bird-Dog', reps: '8 reps per side', notes: 'Opposite arm and leg, hips dead level. Brace as if balancing a full cup on your lower back.' },
-    { id: 'wu3', name: 'Dead Bug', reps: '10 reps per side', notes: 'Lower back pressed firmly into the floor while opposite limbs extend.' },
-    { id: 'wu4', name: 'Scapular Wall Slides', reps: '10 reps', notes: 'Back to wall, arms in a goalpost, slide up and down keeping wrists and elbows on the wall. Direct prep for the scapular stabilisers.' },
-  ],
-  cooldown: [
-    { id: 'cd1', name: "Child's Pose", reps: '1–2 min', notes: 'Sit back on heels, arms forward, breathe into the belly.' },
-    { id: 'cd2', name: 'Glute Figure-4 Stretch', reps: '1 min per side', notes: 'Ankle over opposite knee, draw back gently.' },
-    { id: 'cd3', name: 'Doorway Pec Stretch', reps: '30s per side', notes: 'Forearm on the frame, step through. Opens the chest so the blade can sit back where it should.' },
-  ],
   A: {
     push: {
       label: 'Push',
@@ -284,6 +306,9 @@ function renderRestTimer() {
 }
 
 function renderWorkoutExercises() {
+  const sessionWarmup = WARMUP[activeSession.type] || [];
+  const sessionCooldown = COOLDOWN[activeSession.type] || [];
+
   // Warmup
   $('#warmup-section').innerHTML = `
     <div class="section-label">Warm-Up (5–8 min)</div>
@@ -293,7 +318,7 @@ function renderWorkoutExercises() {
         <span class="chevron">▼</span>
       </div>
       <div class="routine-body">
-        ${DEFAULT_EXERCISES.warmup.map(e => `
+        ${sessionWarmup.map(e => `
           <div class="routine-item"><strong>${e.name}</strong> — ${e.reps}<br>${e.notes}</div>
         `).join('')}
       </div>
@@ -346,7 +371,7 @@ function renderWorkoutExercises() {
         <span class="chevron">▼</span>
       </div>
       <div class="routine-body">
-        ${DEFAULT_EXERCISES.cooldown.map(e => `
+        ${sessionCooldown.map(e => `
           <div class="routine-item"><strong>${e.name}</strong> — ${e.reps}<br>${e.notes}</div>
         `).join('')}
       </div>

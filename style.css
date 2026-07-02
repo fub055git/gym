@@ -14,8 +14,8 @@
   --border: #e8ecf0;
   --shadow: 0 1px 3px rgba(0,0,0,0.06);
   --radius: 14px;
-  --nav-height: 80px;
-  --header-height: 56px;
+  --nav-height: 84px;
+  --header-height: 60px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -49,7 +49,7 @@ header {
 }
 
 header h1 {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 700;
 }
 
@@ -57,7 +57,7 @@ header h1 {
   background: none;
   border: none;
   color: var(--primary);
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   cursor: pointer;
   padding: 6px 12px;
@@ -86,7 +86,7 @@ main {
 }
 
 .card h3 {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--text);
@@ -106,7 +106,7 @@ main {
   display: inline-block;
   background: var(--primary-light);
   color: var(--primary);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   padding: 4px 12px;
   border-radius: 20px;
@@ -121,14 +121,14 @@ main {
 }
 
 #today-summary h2 {
-  font-size: 28px;
+  font-size: 31px;
   font-weight: 700;
   margin-bottom: 4px;
 }
 
 #today-workout-subtitle {
   color: var(--text-light);
-  font-size: 18px;
+  font-size: 21px;
   margin-bottom: 20px;
 }
 
@@ -139,7 +139,7 @@ main {
   border: none;
   border-radius: 12px;
   padding: 14px 32px;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
@@ -153,7 +153,7 @@ main {
   border: none;
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -163,7 +163,7 @@ main {
   border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
@@ -176,7 +176,7 @@ main {
   border: 1.5px solid var(--danger);
   border-radius: 10px;
   padding: 10px 20px;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 500;
   color: var(--danger);
   cursor: pointer;
@@ -189,7 +189,7 @@ main {
   border: none;
   border-radius: 8px;
   padding: 6px 14px;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -202,7 +202,7 @@ main {
 }
 
 #timer-display {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
@@ -227,20 +227,20 @@ main {
 }
 
 .exercise-header .ex-name {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   flex: 1;
 }
 
 .exercise-header .ex-meta {
-  font-size: 16px;
+  font-size: 19px;
   color: var(--text-light);
   white-space: nowrap;
 }
 
 .exercise-header .ex-check {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 2px solid var(--border);
   flex-shrink: 0;
@@ -273,7 +273,7 @@ main {
 .exercise-body.open { display: block; }
 
 .exercise-notes {
-  font-size: 17px;
+  font-size: 20px;
   color: var(--text-light);
   line-height: 1.5;
   margin-bottom: 12px;
@@ -291,7 +291,7 @@ main {
 }
 
 .set-label {
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--text-light);
   width: 24px;
@@ -299,11 +299,11 @@ main {
 }
 
 .set-input {
-  width: 70px;
+  width: 72px;
   padding: 8px 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 21px;
   text-align: center;
   background: var(--bg);
   color: var(--text);
@@ -319,14 +319,14 @@ main {
 .set-input::placeholder { color: #c0c8d0; }
 
 .set-unit {
-  font-size: 16px;
+  font-size: 19px;
   color: var(--text-light);
-  width: 24px;
+  width: 28px;
 }
 
 .set-check-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   border: 1.5px solid var(--border);
   background: white;
@@ -361,7 +361,7 @@ main {
 
 /* Section Headers */
 .section-label {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-light);
   text-transform: uppercase;
@@ -387,12 +387,12 @@ main {
 }
 
 .routine-header .name {
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 600;
 }
 
 .routine-header .chevron {
-  font-size: 12px;
+  font-size: 15px;
   color: var(--text-light);
   transition: transform 0.2s;
 }
@@ -407,7 +407,7 @@ main {
 .routine-item {
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 17px;
+  font-size: 20px;
   line-height: 1.5;
 }
 
@@ -434,7 +434,7 @@ nav {
   background: none;
   border: none;
   color: var(--text-light);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: color 0.15s;
@@ -445,8 +445,8 @@ nav {
 }
 
 .nav-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 /* History */
@@ -463,13 +463,13 @@ nav {
 }
 
 .history-item .hi-left h4 {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .history-item .hi-left p {
-  font-size: 17px;
+  font-size: 20px;
   color: var(--text-light);
 }
 
@@ -478,12 +478,12 @@ nav {
 }
 
 .history-item .hi-right .hi-date {
-  font-size: 17px;
+  font-size: 20px;
   color: var(--text-light);
 }
 
 .history-item .hi-right .hi-duration {
-  font-size: 16px;
+  font-size: 19px;
   color: var(--primary);
   font-weight: 600;
 }
@@ -494,7 +494,7 @@ nav {
   color: var(--text-light);
 }
 
-.empty-state p { margin-bottom: 6px; font-size: 14px; }
+.empty-state p { margin-bottom: 6px; font-size: 17px; }
 
 /* Stats */
 .stat-row {
@@ -505,13 +505,13 @@ nav {
 }
 
 .stat-item .stat-val {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   color: var(--primary);
 }
 
 .stat-item .stat-label {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-light);
   margin-top: 2px;
 }
@@ -541,7 +541,7 @@ nav {
 }
 
 .modal-content h3 {
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 700;
   margin-bottom: 16px;
 }
@@ -564,7 +564,7 @@ nav {
   padding: 12px 14px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 18px;
   background: var(--bg);
   color: var(--text);
   margin-bottom: 10px;
@@ -595,7 +595,7 @@ nav {
 .select-group:last-child { border-bottom: none; }
 
 .select-group span {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 500;
 }
 
@@ -603,7 +603,7 @@ nav {
   padding: 6px 10px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 17px;
+  font-size: 20px;
   background: var(--bg);
   color: var(--text);
   -webkit-appearance: none;
@@ -616,19 +616,19 @@ nav {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 16px;
+  font-size: 19px;
 }
 
 .custom-ex-item:last-child { border-bottom: none; }
 
 .custom-ex-item .cex-info { flex: 1; }
-.custom-ex-item .cex-info small { color: var(--text-light); display: block; font-size: 14px; }
+.custom-ex-item .cex-info small { color: var(--text-light); display: block; font-size: 17px; }
 
 .custom-ex-remove {
   background: none;
   border: none;
   color: var(--danger);
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   padding: 4px 8px;
 }
@@ -637,7 +637,7 @@ nav {
 
 /* Previous weight hint */
 .prev-weight {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-light);
   padding: 2px 0 4px;
 }
@@ -647,7 +647,7 @@ nav {
   display: inline-block;
   background: #fff3e0;
   color: #e07020;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 6px;
@@ -676,12 +676,12 @@ nav {
 }
 
 .constraints-title {
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
 }
 
 .constraints-read {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--danger);
   letter-spacing: 0.5px;
@@ -692,7 +692,7 @@ nav {
 
 .constraints-chevron {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 15px;
   color: var(--text-light);
   transition: transform 0.2s;
 }
@@ -705,7 +705,7 @@ nav {
 .constraints-body.open { display: block; }
 
 .constraint-item {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.5;
   color: var(--text);
   padding: 7px 0;
@@ -730,7 +730,7 @@ nav {
 }
 
 .rest-label {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-light);
   letter-spacing: 1px;
@@ -738,7 +738,7 @@ nav {
 }
 
 #rest-countdown {
-  font-size: 28px;
+  font-size: 31px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--primary);
@@ -747,7 +747,7 @@ nav {
 }
 
 .rest-skip {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--text-light);
 }
 
@@ -776,7 +776,7 @@ nav {
 
 .session-notes-card label {
   display: block;
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 10px;
 }
@@ -787,7 +787,7 @@ nav {
   padding: 12px 14px;
   border: 1.5px solid var(--border);
   border-radius: 10px;
-  font-size: 17px;
+  font-size: 20px;
   font-family: inherit;
   background: var(--bg);
   color: var(--text);
@@ -806,7 +806,7 @@ nav {
 
 /* Notes in history detail */
 .detail-notes {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-light);
   background: var(--bg);
   border-radius: 8px;
