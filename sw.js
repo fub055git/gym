@@ -1,5 +1,5 @@
-const CACHE_NAME = 'spine-safe-v7';
-const ASSETS = ['./index.html', './style.css', './app.js'];
+const CACHE_NAME = 'spine-safe-v8';
+const ASSETS = ['./', './index.html', './style.css', './app.js', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
@@ -15,8 +15,21 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Answer from the cache straight away, then refresh the cache in the background.
+// A new deploy shows up the next time the app is opened, with no CACHE_NAME bump.
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    caches.open(CACHE_NAME).then(cache =>
+      cache.match(e.request).then(cached => {
+        const fresh = fetch(e.request).then(res => {
+          if (res.ok) cache.put(e.request, res.clone());
+          return res;
+        });
+        if (!cached) return fresh;
+        e.waitUntil(fresh.catch(() => {}));
+        return cached;
+      })
+    )
   );
 });

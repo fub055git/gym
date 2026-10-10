@@ -137,18 +137,39 @@ function save(key, val) { localStorage.setItem('sst_' + key, JSON.stringify(val)
 let schedule = load('schedule', { week: 'A', dayIndex: 0 });
 let history = load('history', []);
 let customExercises = load('custom', []);
-let activeSession = null;
+let overrides = load('overrides', {});
+let activeSession = load('active', null);
 let timerInterval = null;
 let timerStart = 0;
 let restInterval = null;
-let restRemaining = 0;
+let audioCtx = null;
+let detailIndex = null;
+let programEditId = null;
+
+const REST_SECONDS = 90;
 
 // ── Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function saveSession() { save('active', activeSession); }
+
+function findDefaultExercise(id) {
+  for (const week of Object.values(DEFAULT_EXERCISES)) {
+    for (const day of Object.values(week)) {
+      const ex = day.exercises.find(e => e.id === id);
+      if (ex) return ex;
+    }
+  }
+  return null;
+}
+
 function getExercisesFor(week, type) {
-  const base = DEFAULT_EXERCISES[week][type].exercises.slice();
+  const base = DEFAULT_EXERCISES[week][type].exercises.map(ex => ({ ...ex, ...overrides[ex.id] }));
   const custom = customExercises.filter(c => c.week === week && c.type === type);
   return [...base, ...custom];
 }
@@ -157,19 +178,23 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+function localDate(d) {
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function getLastWeight(exerciseId) {
+// Matched on name, not id, so an exercise that appears in both Week A and Week B has one record.
+function getLastSets(name) {
   for (let i = history.length - 1; i >= 0; i--) {
-    const ex = history[i].exercises.find(e => e.id === exerciseId);
-    if (ex) {
-      const lastSet = ex.sets.find(s => s.weight > 0);
-      if (lastSet) return lastSet.weight;
-    }
+    const ex = history[i].exercises.find(e => e.name === name);
+    const done = ex ? ex.sets.filter(s => s.completed && s.reps > 0) : [];
+    if (done.length) return { date: history[i].date, sets: done };
   }
   return null;
 }
@@ -247,22 +272,38 @@ function startWorkout() {
     type,
     startTime: Date.now(),
     notes: '',
-    exercises: exercises.map(ex => ({
-      id: ex.id,
-      name: ex.name,
-      notes: ex.notes,
-      probe: ex.probe || false,
-      targetSets: ex.sets,
-      targetReps: ex.reps,
-      sets: Array.from({ length: ex.sets }, () => ({ weight: 0, reps: 0, completed: false }))
-    }))
+    restEnd: 0,
+    exercises: exercises.map(ex => {
+      const last = getLastSets(ex.name);
+      return {
+        id: ex.id,
+        name: ex.name,
+        notes: ex.notes,
+        probe: ex.probe || false,
+        targetSets: ex.sets,
+        targetReps: ex.reps,
+        // Start each set from what was done last time, so only changes need typing
+        sets: Array.from({ length: ex.sets }, (_, i) => {
+          const prev = last ? last.sets[Math.min(i, last.sets.length - 1)] : null;
+          return { weight: prev ? prev.weight : 0, reps: prev ? prev.reps : 0, completed: false };
+        })
+      };
+    })
   };
 
-  timerStart = Date.now();
+  saveSession();
+  resumeWorkout();
+}
+
+// Also runs on load, to pick up a workout that was in progress when the app was closed
+function resumeWorkout() {
+  timerStart = activeSession.startTime;
+  clearInterval(timerInterval);
   timerInterval = setInterval(updateTimer, 1000);
   updateTimer();
 
   renderWorkoutExercises();
+  runRestTimer();
   showWorkoutView();
 }
 
@@ -280,38 +321,117 @@ function updateTimer() {
   $('#timer-display').textContent = formatDuration(elapsed);
 }
 
+// Rest is measured against the clock, so it stays right while the phone is locked
+function restRemaining() {
+  if (!activeSession || !activeSession.restEnd) return 0;
+  return Math.max(0, Math.ceil((activeSession.restEnd - Date.now()) / 1000));
+}
+
 function startRestTimer() {
+  activeSession.restEnd = Date.now() + REST_SECONDS * 1000;
+  runRestTimer();
+}
+
+function runRestTimer() {
   clearInterval(restInterval);
-  restRemaining = 90;
   renderRestTimer();
+  if (restRemaining() <= 0) return;
   restInterval = setInterval(() => {
-    restRemaining--;
-    if (restRemaining <= 0) {
-      clearInterval(restInterval);
-      restRemaining = 0;
-    }
-    renderRestTimer();
-  }, 1000);
+    if (restRemaining() > 0) { renderRestTimer(); return; }
+    // No alert if the rest ran out a while ago with the app in the background
+    const justEnded = Date.now() - activeSession.restEnd < 3000;
+    stopRestTimer();
+    saveSession();
+    if (justEnded) restDoneAlert();
+  }, 250);
+}
+
+function stopRestTimer() {
+  clearInterval(restInterval);
+  if (activeSession) activeSession.restEnd = 0;
+  renderRestTimer();
 }
 
 function skipRestTimer() {
-  clearInterval(restInterval);
-  restRemaining = 0;
-  renderRestTimer();
+  stopRestTimer();
+  saveSession();
 }
 
 function renderRestTimer() {
   const el = $('#rest-timer');
   if (!el) return;
-  if (restRemaining <= 0) {
+  const remaining = restRemaining();
+  if (remaining <= 0) {
     el.classList.add('hidden');
   } else {
     el.classList.remove('hidden');
-    $('#rest-countdown').textContent = formatDuration(restRemaining);
-    const pct = (restRemaining / 90) * 100;
+    $('#rest-countdown').textContent = formatDuration(remaining);
+    const pct = (remaining / REST_SECONDS) * 100;
     $('#rest-bar-fill').style.width = pct + '%';
-    $('#rest-bar-fill').style.background = restRemaining <= 15 ? 'var(--success)' : 'var(--primary)';
+    $('#rest-bar-fill').style.background = remaining <= 15 ? 'var(--success)' : 'var(--primary)';
   }
+}
+
+// Browsers only allow sound that starts from a tap, so this is called when a set is ticked
+function primeAudio() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch {}
+}
+
+function restDoneAlert() {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch {}
+}
+
+function exerciseCardHTML(ex, ei, open) {
+  const allDone = ex.sets.every(s => s.completed);
+  const last = getLastSets(ex.name);
+  return `
+    <div class="exercise-header ${ex.probe ? 'probe-header' : ''}" onclick="toggleExercise(${ei})">
+      <div class="ex-check ${allDone ? 'done' : ''}"></div>
+      <span class="ex-name">${esc(ex.name)}${ex.probe ? ' <span class="probe-badge">PROBE</span>' : ''}</span>
+      <span class="ex-meta">${ex.targetSets}×${esc(ex.targetReps)}</span>
+    </div>
+    <div class="exercise-body ${open ? 'open' : ''}" id="ex-body-${ei}">
+      ${ex.notes ? `<div class="exercise-notes">${esc(ex.notes)}</div>` : ''}
+      ${last ? `<div class="prev-weight">Last time (${formatDate(last.date)}): ${last.sets.map(s => `${s.weight} kg × ${s.reps}`).join(' · ')}</div>` : ''}
+      ${ex.sets.map((set, si) => `
+        <div class="set-row">
+          <span class="set-label">${si + 1}</span>
+          <input class="set-input" type="number" inputmode="decimal" placeholder="kg"
+            value="${set.weight || ''}" oninput="updateSet(${ei},${si},'weight',this.value)">
+          <span class="set-unit">kg</span>
+          <input class="set-input" type="number" inputmode="numeric" placeholder="reps"
+            value="${set.reps || ''}" oninput="this.classList.remove('invalid');updateSet(${ei},${si},'reps',this.value)">
+          <span class="set-unit">reps</span>
+          <button class="set-check-btn ${set.completed ? 'done' : ''}"
+            onclick="toggleSet(${ei},${si})"></button>
+        </div>
+      `).join('')}
+      <div class="set-actions">
+        <button class="btn-small" onclick="addSet(${ei})">+ Add set</button>
+        ${ex.sets.length > ex.targetSets ? `<button class="btn-small btn-small-muted" onclick="removeSet(${ei})">Remove last</button>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Redraws one exercise only, so everything else on the page stays as the user left it
+function refreshExercise(ei) {
+  const open = $(`#ex-body-${ei}`).classList.contains('open');
+  $(`#ex-card-${ei}`).innerHTML = exerciseCardHTML(activeSession.exercises[ei], ei, open);
 }
 
 function renderWorkoutExercises() {
@@ -339,35 +459,10 @@ function renderWorkoutExercises() {
   container.innerHTML = '<div class="section-label">Exercises</div>';
 
   activeSession.exercises.forEach((ex, ei) => {
-    const allDone = ex.sets.every(s => s.completed);
-    const lastWeight = getLastWeight(ex.id);
-
     const card = document.createElement('div');
     card.className = 'exercise-card';
-    card.innerHTML = `
-      <div class="exercise-header ${ex.probe ? 'probe-header' : ''}" onclick="toggleExercise(${ei})">
-        <div class="ex-check ${allDone ? 'done' : ''}"></div>
-        <span class="ex-name">${ex.name}${ex.probe ? ' <span class="probe-badge">PROBE</span>' : ''}</span>
-        <span class="ex-meta">${ex.targetSets}×${ex.targetReps}</span>
-      </div>
-      <div class="exercise-body" id="ex-body-${ei}">
-        ${ex.notes ? `<div class="exercise-notes">${ex.notes}</div>` : ''}
-        ${lastWeight ? `<div class="prev-weight">Last session: ${lastWeight} kg</div>` : ''}
-        ${ex.sets.map((set, si) => `
-          <div class="set-row">
-            <span class="set-label">${si + 1}</span>
-            <input class="set-input" type="number" inputmode="decimal" placeholder="kg"
-              value="${set.weight || ''}" onchange="updateSet(${ei},${si},'weight',this.value)">
-            <span class="set-unit">kg</span>
-            <input class="set-input" type="number" inputmode="numeric" placeholder="reps"
-              value="${set.reps || ''}" onchange="updateSet(${ei},${si},'reps',this.value)">
-            <span class="set-unit">reps</span>
-            <button class="set-check-btn ${set.completed ? 'done' : ''}"
-              onclick="toggleSet(${ei},${si})"></button>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    card.id = `ex-card-${ei}`;
+    card.innerHTML = exerciseCardHTML(ex, ei, false);
     container.appendChild(card);
   });
 
@@ -390,7 +485,7 @@ function renderWorkoutExercises() {
       <label for="session-notes-input">How did it go?</label>
       <textarea id="session-notes-input" class="session-notes-textarea"
         placeholder="e.g. felt strong today, increased weight on shoulder press, right shoulder a bit tight..."
-        oninput="activeSession.notes = this.value">${activeSession.notes || ''}</textarea>
+        oninput="updateNotes(this.value)">${esc(activeSession.notes || '')}</textarea>
     </div>
   `;
 }
@@ -409,17 +504,55 @@ function toggleRoutine(header) {
 function updateSet(ei, si, field, value) {
   if (!activeSession) return;
   activeSession.exercises[ei].sets[si][field] = parseFloat(value) || 0;
+  saveSession();
+}
+
+function updateNotes(value) {
+  if (!activeSession) return;
+  activeSession.notes = value;
+  saveSession();
 }
 
 function toggleSet(ei, si) {
   if (!activeSession) return;
   const set = activeSession.exercises[ei].sets[si];
+
+  // A set needs reps before it counts; weight can stay empty for bodyweight work
+  if (!set.completed && !(set.reps > 0)) {
+    const repsInput = $$(`#ex-body-${ei} .set-row`)[si].querySelectorAll('.set-input')[1];
+    repsInput.classList.add('invalid');
+    repsInput.focus();
+    return;
+  }
+
   set.completed = !set.completed;
-  if (set.completed) startRestTimer();
-  else { clearInterval(restInterval); restRemaining = 0; }
-  renderWorkoutExercises();
-  const body = $(`#ex-body-${ei}`);
-  if (body) body.classList.add('open');
+  const workoutDone = activeSession.exercises.every(e => e.sets.every(s => s.completed));
+  if (set.completed && !workoutDone) {
+    primeAudio();
+    startRestTimer();
+  } else {
+    stopRestTimer();
+  }
+  saveSession();
+  refreshExercise(ei);
+}
+
+function addSet(ei) {
+  if (!activeSession) return;
+  const sets = activeSession.exercises[ei].sets;
+  const prev = sets[sets.length - 1];
+  sets.push({ weight: prev ? prev.weight : 0, reps: prev ? prev.reps : 0, completed: false });
+  saveSession();
+  refreshExercise(ei);
+}
+
+function removeSet(ei) {
+  if (!activeSession) return;
+  const ex = activeSession.exercises[ei];
+  if (ex.sets.length <= ex.targetSets) return;
+  ex.sets.pop();
+  saveSession();
+  refreshExercise(ei);
 }
 
 function finishWorkout() {
@@ -439,9 +572,6 @@ function finishWorkout() {
   }
 
   const elapsed = Math.floor((Date.now() - timerStart) / 1000);
-  clearInterval(timerInterval);
-  clearInterval(restInterval);
-  restRemaining = 0;
 
   const record = {
     date: new Date().toISOString(),
@@ -453,7 +583,11 @@ function finishWorkout() {
     exercises: activeSession.exercises.map(e => ({
       id: e.id,
       name: e.name,
-      sets: e.sets.map(s => ({ weight: s.weight, reps: s.reps, completed: s.completed }))
+      // Unticked sets still hold their prefilled numbers, which were never lifted.
+      // An added set that was never done is dropped rather than recorded as skipped.
+      sets: e.sets.filter((s, i) => s.completed || i < e.targetSets).map(s => s.completed
+        ? { weight: s.weight, reps: s.reps, completed: true }
+        : { weight: 0, reps: 0, completed: false })
     }))
   };
 
@@ -461,17 +595,19 @@ function finishWorkout() {
   save('history', history);
 
   advanceSchedule();
-  activeSession = null;
-  $('nav').style.display = 'flex';
-  showView('today');
+  endSession();
 }
 
 function cancelWorkout() {
   if (activeSession && !confirm('Cancel this workout? Progress will be lost.')) return;
+  endSession();
+}
+
+function endSession() {
   clearInterval(timerInterval);
-  clearInterval(restInterval);
-  restRemaining = 0;
   activeSession = null;
+  saveSession();
+  stopRestTimer();
   $('nav').style.display = 'flex';
   showView('today');
 }
@@ -518,17 +654,35 @@ function renderHistory() {
   }).join('');
 }
 
-function showHistoryDetail(index) {
+function showHistoryDetail(index, editing = false) {
   const h = history[index];
   if (!h) return;
+  detailIndex = index;
   const data = DEFAULT_EXERCISES[h.week][h.type];
 
   $('#detail-title').textContent = `Week ${h.week} • ${data.label} — ${formatDate(h.date)}`;
-  $('#detail-content').innerHTML = `
-    ${h.notes ? `<div class="detail-notes">${h.notes}</div>` : ''}
+  $('#detail-content').innerHTML = editing ? `
+    ${h.exercises.map((e, ei) => `
+      <div style="margin-bottom:12px">
+        <strong style="font-size:17px">${esc(e.name)}</strong>
+        ${e.sets.map((s, si) => `
+          <div class="set-row" data-ei="${ei}" data-si="${si}">
+            <span class="set-label">${si + 1}</span>
+            <input class="set-input" type="number" inputmode="decimal" placeholder="kg" value="${s.weight || ''}">
+            <span class="set-unit">kg</span>
+            <input class="set-input" type="number" inputmode="numeric" placeholder="reps" value="${s.reps || ''}">
+            <span class="set-unit">reps</span>
+            <input class="edit-done" type="checkbox" aria-label="Completed" ${s.completed ? 'checked' : ''}>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')}
+    <textarea id="edit-notes" class="session-notes-textarea" placeholder="Session notes">${esc(h.notes || '')}</textarea>
+  ` : `
+    ${h.notes ? `<div class="detail-notes">${esc(h.notes)}</div>` : ''}
     ${h.exercises.map(e => `
       <div style="margin-bottom:12px">
-        <strong style="font-size:17px">${e.name}</strong>
+        <strong style="font-size:17px">${esc(e.name)}</strong>
         ${e.sets.map((s, i) => `
           <div style="font-size:15px;color:var(--text-light);padding:2px 0 2px 8px">
             Set ${i + 1}: ${s.completed ? `${s.weight}kg × ${s.reps} reps ✓` : '— skipped'}
@@ -538,13 +692,42 @@ function showHistoryDetail(index) {
     `).join('')}
   `;
 
+  $('#detail-actions-view').classList.toggle('hidden', editing);
+  $('#detail-actions-edit').classList.toggle('hidden', !editing);
   $('#modal-detail').classList.remove('hidden');
+}
+
+function saveHistoryEdit() {
+  const h = history[detailIndex];
+  if (!h) return;
+  $$('#detail-content .set-row').forEach(row => {
+    const set = h.exercises[row.dataset.ei].sets[row.dataset.si];
+    const [weight, reps] = row.querySelectorAll('.set-input');
+    set.weight = parseFloat(weight.value) || 0;
+    set.reps = parseFloat(reps.value) || 0;
+    set.completed = row.querySelector('.edit-done').checked;
+  });
+  h.notes = $('#edit-notes').value;
+  save('history', history);
+  renderHistory();
+  showHistoryDetail(detailIndex);
+}
+
+function deleteHistoryEntry() {
+  if (!history[detailIndex]) return;
+  if (!confirm('Delete this workout from history? This cannot be undone.')) return;
+  history.splice(detailIndex, 1);
+  save('history', history);
+  $('#modal-detail').classList.add('hidden');
+  renderHistory();
 }
 
 // ── Manage View ──────────────────────────────────────────────
 function renderManage() {
   $('#sel-week').value = schedule.week;
   $('#sel-day').value = schedule.dayIndex;
+  $('#sel-program').value = `${schedule.week}-${DAY_MAP[schedule.dayIndex]}`;
+  renderProgram();
 
   const container = $('#custom-exercise-list');
   if (customExercises.length === 0) {
@@ -553,13 +736,61 @@ function renderManage() {
     container.innerHTML = customExercises.map((c, i) => `
       <div class="custom-ex-item">
         <div class="cex-info">
-          ${c.name}
-          <small>Week ${c.week} • ${c.type} • ${c.sets}×${c.reps}</small>
+          ${esc(c.name)}
+          <small>Week ${c.week} • ${c.type} • ${c.sets}×${esc(c.reps)}</small>
         </div>
         <button class="custom-ex-remove" onclick="removeCustomExercise(${i})">×</button>
       </div>
     `).join('');
   }
+}
+
+// Sets, reps and cues of the built-in program can be changed here; the edits are kept
+// as overrides so the original is still there to reset to.
+function renderProgram() {
+  const [week, type] = $('#sel-program').value.split('-');
+  $('#program-list').innerHTML = DEFAULT_EXERCISES[week][type].exercises.map(base => {
+    const ex = { ...base, ...overrides[base.id] };
+    return `
+      <div class="custom-ex-item">
+        <div class="cex-info">
+          ${esc(ex.name)}
+          <small>${ex.sets}×${esc(ex.reps)}${overrides[base.id] ? ' • edited' : ''}</small>
+        </div>
+        <button class="btn-small" onclick="editProgramExercise('${base.id}')">Edit</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function editProgramExercise(id) {
+  const ex = { ...findDefaultExercise(id), ...overrides[id] };
+  programEditId = id;
+  $('#program-title').textContent = ex.name;
+  $('#prog-sets').value = ex.sets;
+  $('#prog-reps').value = ex.reps;
+  $('#prog-notes').value = ex.notes;
+  $('#btn-prog-reset').disabled = !overrides[id];
+  $('#modal-program').classList.remove('hidden');
+}
+
+function saveProgramExercise() {
+  const base = findDefaultExercise(programEditId);
+  overrides[programEditId] = {
+    sets: Math.max(1, parseInt($('#prog-sets').value) || base.sets),
+    reps: $('#prog-reps').value.trim() || base.reps,
+    notes: $('#prog-notes').value.trim()
+  };
+  save('overrides', overrides);
+  $('#modal-program').classList.add('hidden');
+  renderProgram();
+}
+
+function resetProgramExercise() {
+  delete overrides[programEditId];
+  save('overrides', overrides);
+  $('#modal-program').classList.add('hidden');
+  renderProgram();
 }
 
 function removeCustomExercise(index) {
@@ -597,30 +828,71 @@ function exportHistory() {
   const lines = ['Date,Week,Day,Session Type,Exercise,Set,Weight (kg),Reps,Completed,Duration (s),Notes'];
   history.forEach(h => {
     const dayLabel = DAY_LABELS[h.dayIndex] || '';
-    const dateStr = new Date(h.date).toISOString().slice(0, 10);
+    const dateStr = localDate(h.date);
     h.exercises.forEach(e => {
       e.sets.forEach((s, i) => {
-        const notes = i === 0 ? `"${(h.notes || '').replace(/"/g, '""')}"` : '';
+        const notes = i === 0 ? csvCell(h.notes || '') : '';
         const duration = i === 0 ? h.duration : '';
-        lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${e.name},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}`);
+        lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${csvCell(e.name)},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}`);
       });
     });
   });
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  downloadFile('spine-safe-history.csv', lines.join('\n'), 'text/csv');
+}
+
+function csvCell(value) {
+  const s = String(value);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadFile(filename, text, type) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'spine-safe-history.csv';
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = filename;
   a.click();
 }
 
+// The backup holds everything the app stores, so it can be restored on this or another device
+function exportBackup() {
+  const backup = {
+    app: 'spine-safe-tracker',
+    version: 1,
+    exported: new Date().toISOString(),
+    schedule, history, customExercises, overrides
+  };
+  downloadFile(`spine-safe-backup-${localDate(new Date())}.json`, JSON.stringify(backup, null, 2), 'application/json');
+}
+
+async function importBackup(file) {
+  let data = null;
+  try { data = JSON.parse(await file.text()); } catch {}
+  const valid = data && data.app === 'spine-safe-tracker' && Array.isArray(data.history) &&
+    data.history.every(h => h && DEFAULT_EXERCISES[h.week] && DEFAULT_EXERCISES[h.week][h.type] && Array.isArray(h.exercises));
+  if (!valid) { alert('That file is not a Spine-Safe Tracker backup.'); return; }
+  if (!confirm(`Replace everything on this device with the backup (${data.history.length} workouts)? This cannot be undone.`)) return;
+
+  history = data.history;
+  customExercises = Array.isArray(data.customExercises) ? data.customExercises : [];
+  overrides = data.overrides || {};
+  schedule = data.schedule || { week: 'A', dayIndex: 0 };
+  save('history', history);
+  save('custom', customExercises);
+  save('overrides', overrides);
+  save('schedule', schedule);
+  renderManage();
+  alert('Backup restored.');
+}
+
 function clearAllData() {
-  if (!confirm('This will delete ALL workout history and custom exercises. Are you sure?')) return;
+  if (!confirm('This will delete ALL workout history, custom exercises and program edits. Are you sure?')) return;
   if (!confirm('Really? This cannot be undone.')) return;
   history = [];
   customExercises = [];
+  overrides = {};
   schedule = { week: 'A', dayIndex: 0 };
   save('history', history);
   save('custom', customExercises);
+  save('overrides', overrides);
   save('schedule', schedule);
   renderManage();
   alert('All data cleared.');
@@ -659,21 +931,42 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#modal-add').classList.add('hidden');
   });
   $('#btn-confirm-add').addEventListener('click', addCustomExercise);
+  $('#sel-program').addEventListener('change', renderProgram);
+  $('#btn-prog-save').addEventListener('click', saveProgramExercise);
+  $('#btn-prog-reset').addEventListener('click', resetProgramExercise);
+  $('#btn-prog-cancel').addEventListener('click', () => {
+    $('#modal-program').classList.add('hidden');
+  });
+
   $('#btn-export').addEventListener('click', exportHistory);
+  $('#btn-backup').addEventListener('click', exportBackup);
+  $('#btn-restore').addEventListener('click', () => $('#file-restore').click());
+  $('#file-restore').addEventListener('change', e => {
+    if (e.target.files[0]) importBackup(e.target.files[0]);
+    e.target.value = '';
+  });
   $('#btn-clear').addEventListener('click', clearAllData);
+
+  // History detail
   $('#btn-close-detail').addEventListener('click', () => {
     $('#modal-detail').classList.add('hidden');
   });
+  $('#btn-edit-workout').addEventListener('click', () => showHistoryDetail(detailIndex, true));
+  $('#btn-delete-workout').addEventListener('click', deleteHistoryEntry);
+  $('#btn-save-edit').addEventListener('click', saveHistoryEdit);
+  $('#btn-cancel-edit').addEventListener('click', () => showHistoryDetail(detailIndex));
 
-  // Close modals on backdrop click
+  // Close modals on backdrop click, unless a history edit would be thrown away
   $$('.modal').forEach(m => {
     m.addEventListener('click', e => {
-      if (e.target === m) m.classList.add('hidden');
+      const editing = !$('#detail-actions-edit').classList.contains('hidden');
+      if (e.target === m && !editing) m.classList.add('hidden');
     });
   });
 
   // Init
-  showView('today');
+  if (activeSession) resumeWorkout();
+  else showView('today');
 });
 
 // Service Worker

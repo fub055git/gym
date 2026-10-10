@@ -318,6 +318,26 @@ main {
 
 .set-input::placeholder { color: #c0c8d0; }
 
+.set-input.invalid { border-color: var(--danger); }
+
+.set-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.btn-small-muted {
+  background: var(--bg);
+  color: var(--text-light);
+}
+
+.edit-done {
+  width: 26px;
+  height: 26px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .set-unit {
   font-size: 19px;
   color: var(--text-light);
@@ -537,6 +557,8 @@ nav {
   padding-bottom: calc(24px + var(--safe-bottom));
   width: 100%;
   max-width: 500px;
+  max-height: 90%;
+  overflow-y: auto;
   animation: slideUp 0.25s ease-out;
 }
 
@@ -554,6 +576,8 @@ nav {
 
 .modal-actions .btn-outline { margin-bottom: 0; }
 .modal-actions .btn-primary { padding: 12px; }
+.modal-actions button { padding-left: 8px; padding-right: 8px; }
+.modal-actions button:disabled { opacity: 0.4; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -575,6 +599,12 @@ nav {
   outline: none;
   border-color: var(--primary);
   background: white;
+}
+
+textarea.input {
+  font-family: inherit;
+  line-height: 1.4;
+  resize: none;
 }
 
 .input-row {
@@ -720,6 +750,11 @@ nav {
   cursor: pointer;
   border: 2px solid var(--primary-light);
   transition: border-color 0.3s;
+  /* Stays in view while scrolling through the exercises */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.14);
 }
 
 .rest-top {
@@ -813,4 +848,5 @@ nav {
   padding: 10px 12px;
   margin-bottom: 14px;
   line-height: 1.5;
+  white-space: pre-wrap;
 }

@@ -94,6 +94,21 @@
           </div>
         </div>
         <div class="card">
+          <h3>Program</h3>
+          <label class="select-group">
+            <span>Session</span>
+            <select id="sel-program">
+              <option value="A-push">Week A - Push</option>
+              <option value="A-pull">Week A - Pull</option>
+              <option value="A-legs">Week A - Legs</option>
+              <option value="B-push">Week B - Push</option>
+              <option value="B-pull">Week B - Pull</option>
+              <option value="B-legs">Week B - Legs</option>
+            </select>
+          </label>
+          <div id="program-list"></div>
+        </div>
+        <div class="card">
           <div class="card-header">
             <h3>Custom Exercises</h3>
             <button id="btn-add-exercise" class="btn-small">+ Add</button>
@@ -102,7 +117,10 @@
         </div>
         <div class="card">
           <h3>Data</h3>
-          <button id="btn-export" class="btn-outline">Export History</button>
+          <button id="btn-export" class="btn-outline">Export History (CSV)</button>
+          <button id="btn-backup" class="btn-outline">Save Backup</button>
+          <button id="btn-restore" class="btn-outline">Restore Backup</button>
+          <input id="file-restore" type="file" accept="application/json,.json" class="hidden">
           <button id="btn-clear" class="btn-danger">Clear All Data</button>
         </div>
       </section>
@@ -152,12 +170,37 @@
       </div>
     </div>
 
+    <!-- Edit Program Exercise Modal -->
+    <div id="modal-program" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="program-title"></h3>
+        <div class="input-row">
+          <input id="prog-sets" type="number" inputmode="numeric" placeholder="Sets" aria-label="Sets" class="input input-sm">
+          <input id="prog-reps" type="text" placeholder="Reps (e.g. 10 @ 18kg)" aria-label="Reps" class="input input-sm">
+        </div>
+        <textarea id="prog-notes" class="input" rows="6" placeholder="Notes / cues" aria-label="Notes"></textarea>
+        <div class="modal-actions">
+          <button id="btn-prog-reset" class="btn-outline">Reset</button>
+          <button id="btn-prog-cancel" class="btn-outline">Cancel</button>
+          <button id="btn-prog-save" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
     <!-- History Detail Modal -->
     <div id="modal-detail" class="modal hidden">
       <div class="modal-content">
         <h3 id="detail-title"></h3>
         <div id="detail-content"></div>
-        <button id="btn-close-detail" class="btn-outline" style="margin-top:12px;width:100%">Close</button>
+        <div id="detail-actions-view" class="modal-actions">
+          <button id="btn-delete-workout" class="btn-danger">Delete</button>
+          <button id="btn-edit-workout" class="btn-outline">Edit</button>
+          <button id="btn-close-detail" class="btn-primary">Close</button>
+        </div>
+        <div id="detail-actions-edit" class="modal-actions hidden">
+          <button id="btn-cancel-edit" class="btn-outline">Cancel</button>
+          <button id="btn-save-edit" class="btn-primary">Save</button>
+        </div>
       </div>
     </div>
   </div>
