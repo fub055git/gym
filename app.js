@@ -52,7 +52,7 @@ const COOLDOWN = {
   ],
 };
 
-const DEFAULT_EXERCISES = {
+const PPL_EXERCISES = {
   A: {
     push: {
       label: 'Push',
@@ -83,7 +83,7 @@ const DEFAULT_EXERCISES = {
         { id: 'al3', name: 'Leg Extension', sets: 3, reps: '12–15', notes: 'Quads isolated, no back involvement. Control the eccentric.' },
         { id: 'al4', name: 'Cable Pull-Through', sets: 2, reps: '12–15', probe: true, notes: 'RE-ENTRY PROBE — not a progression. Hips reach back to the wall behind you, spine dead straight, squeeze the glutes to stand. Stop immediately if anything pulls in the lower back and report the sensation and location to Body Applications.' },
         { id: 'al5', name: 'Seated Calf Raise', sets: 3, reps: '15', notes: 'Seated keeps the load off the spine. Avoid standing calf raises — they load axially.' },
-        { id: 'al6', name: 'Pallof Press', sets: 3, reps: '10 per side', notes: 'Side-on to a chest-height cable, press straight out, resist the twist. Anti-rotation — a built-in belt for the spine.' },
+        { id: 'al6', name: 'Pallof Press', sets: 3, reps: '10 per side', unilateral: true, notes: 'Side-on to a chest-height cable, press straight out, resist the twist. Anti-rotation — a built-in belt for the spine.' },
       ]
     }
   },
@@ -95,7 +95,7 @@ const DEFAULT_EXERCISES = {
         { id: 'bp1', name: 'Machine Chest Press', sets: 3, reps: '10 @ 18kg', notes: 'Same rule as Week A — left blade holds position or the set ends. Anchor lift across both weeks; keep it consistent for tracking.' },
         { id: 'bp2', name: 'Arnold Press', sets: 3, reps: '10–12', notes: 'Seated, back supported. Controlled rotation, no aggressive lock-out, spine flat to the pad.' },
         { id: 'bp3', name: 'Cable Fly (high pulley)', sets: 3, reps: '12–15', notes: 'High-to-low arc to bias the lower pec. Staggered stance for a stable base, torso upright, no spinal strain.' },
-        { id: 'bp4', name: 'Single-Arm Cable Pushdown', sets: 3, reps: '12–15 per side', notes: 'Left side sets the working weight. Elbow pinned, full extension at lockout. Single-arm exposes the side-to-side difference the bar hides.' },
+        { id: 'bp4', name: 'Single-Arm Cable Pushdown', sets: 3, reps: '12–15 per side', unilateral: true, notes: 'Left side sets the working weight. Elbow pinned, full extension at lockout. Single-arm exposes the side-to-side difference the bar hides.' },
       ]
     },
     pull: {
@@ -117,7 +117,7 @@ const DEFAULT_EXERCISES = {
         { id: 'bl3', name: 'Leg Extension', sets: 3, reps: '12–15', notes: 'Quads isolated, controlled eccentric.' },
         { id: 'bl4', name: 'Machine Hip Thrust', sets: 2, reps: '12–15', probe: true, notes: 'RE-ENTRY PROBE — not a progression. Controlled tempo, full squeeze at the top, ribs down. Stop and report if anything pulls. Do not load this up as a main lift.' },
         { id: 'bl5', name: 'Seated Calf Raise', sets: 3, reps: '15', notes: 'Seated keeps the load off the spine.' },
-        { id: 'bl6', name: 'Pallof Press', sets: 3, reps: '10 per side', notes: 'Anti-rotation, stay rigid against the twist.' },
+        { id: 'bl6', name: 'Pallof Press', sets: 3, reps: '10 per side', unilateral: true, notes: 'Anti-rotation, stay rigid against the twist.' },
       ]
     }
   }
@@ -125,6 +125,111 @@ const DEFAULT_EXERCISES = {
 
 const DAY_MAP = ['push', 'pull', 'legs', 'push', 'pull', 'legs'];
 const DAY_LABELS = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6'];
+
+// ── Programs ─────────────────────────────────────────────────
+// A session's week, dayIndex and type are what its history records and the CSV carry.
+function pplSessions() {
+  const sessions = {};
+  for (const week of ['A', 'B']) {
+    for (const type of ['push', 'pull', 'legs']) {
+      const data = PPL_EXERCISES[week][type];
+      sessions[`${week}-${type}`] = {
+        ...data, week, type,
+        heading: `${data.label} Day`,
+        title: `Week ${week} • ${data.label}`,
+        warmup: WARMUP[type],
+        cooldown: COOLDOWN[type]
+      };
+    }
+  }
+  return sessions;
+}
+
+// v2 reuses the v1 cue for the same exercise, so the wording lives in one place
+function v1Cue(name) {
+  for (const week of Object.values(PPL_EXERCISES)) {
+    for (const day of Object.values(week)) {
+      const ex = day.exercises.find(e => e.name === name);
+      if (ex) return ex.notes;
+    }
+  }
+  return '';
+}
+
+function v2Exercise(id, name, sets, reps, extra) {
+  return { id, name, sets, reps, notes: v1Cue(name), ...extra };
+}
+
+function mergeRoutines(a, b) {
+  return [...a, ...b.filter(x => !a.some(y => y.name === x.name))];
+}
+
+function v2Session(label, subtitle, week, dayIndex, type, exercises) {
+  const upper = type === 'upper';
+  return {
+    label, subtitle, week, dayIndex, type, exercises,
+    heading: label,
+    title: label,
+    warmup: upper ? mergeRoutines(WARMUP.push, WARMUP.pull) : WARMUP.legs,
+    cooldown: upper ? mergeRoutines(COOLDOWN.push, COOLDOWN.pull) : COOLDOWN.legs
+  };
+}
+
+const UNILATERAL = { unilateral: true };
+const PROBE = { probe: true };
+
+const PROGRAMS = {
+  'ppl-v1': {
+    name: 'Spine-safe PPL (6-day A/B)',
+    constraints: CONSTRAINTS,
+    sessions: pplSessions()
+  },
+  'ul-v2': {
+    name: 'Upper/Lower v2 (4-day)',
+    // The chest press baseline is a v1 rule
+    constraints: CONSTRAINTS.slice(0, 7),
+    rotation: ['upperA', 'lowerA', 'upperB', 'lowerB'],
+    sessions: {
+      upperA: v2Session('Upper A', 'Chest, Shoulders, Back, Arms', 'A', 0, 'upper', [
+        v2Exercise('v2ua1', 'Pallof Press', 2, '10 per side', UNILATERAL),
+        v2Exercise('v2ua2', 'Machine Chest Press', 3, '10–12'),
+        v2Exercise('v2ua3', 'Arnold Press', 2, '10–15'),
+        v2Exercise('v2ua4', 'Lat Pulldown', 3, '10–12'),
+        v2Exercise('v2ua5', 'Chest-Supported Machine Row', 3, '10–12'),
+        v2Exercise('v2ua6', 'Face Pulls', 3, '15'),
+        v2Exercise('v2ua7', 'Cable Tricep Pushdown', 2, '12–15'),
+        v2Exercise('v2ua8', 'Incline Dumbbell Curl', 2, '10–12'),
+      ]),
+      lowerA: v2Session('Lower A', 'Legs & Core', 'A', 1, 'lower', [
+        v2Exercise('v2la1', 'Pallof Press', 2, '10 per side', UNILATERAL),
+        v2Exercise('v2la2', 'Leg Press', 3, '10–12'),
+        v2Exercise('v2la3', 'Leg Extension', 3, '12–15'),
+        v2Exercise('v2la4', 'Seated Leg Curl', 3, '12–15'),
+        v2Exercise('v2la5', 'Seated Calf Raise', 3, '15'),
+        v2Exercise('v2la6', 'Cable Pull-Through', 2, '12–15', PROBE),
+      ]),
+      upperB: v2Session('Upper B', 'Shoulders, Back, Chest, Arms', 'B', 2, 'upper', [
+        v2Exercise('v2ub1', 'Pallof Press', 2, '10 per side', UNILATERAL),
+        v2Exercise('v2ub2', 'Arnold Press', 3, '10–15'),
+        v2Exercise('v2ub3', 'Lat Pulldown (close/neutral grip)', 3, '10–12', { notes: 'Lean from the hips only, drive with the elbows.' }),
+        v2Exercise('v2ub4', 'Seated Cable Row', 3, '10–12'),
+        v2Exercise('v2ub5', 'Machine Chest Press', 2, '12–15'),
+        v2Exercise('v2ub6', 'Pec Deck', 2, '12–15'),
+        v2Exercise('v2ub7', 'Face Pulls', 3, '15'),
+        v2Exercise('v2ub8', 'Seated Hammer Curl', 2, '10–12'),
+      ]),
+      lowerB: v2Session('Lower B', 'Legs & Core', 'B', 3, 'lower', [
+        v2Exercise('v2lb1', 'Pallof Press', 2, '10 per side', UNILATERAL),
+        v2Exercise('v2lb2', 'Lying Leg Curl', 3, '12–15'),
+        v2Exercise('v2lb3', 'Leg Press', 2, '12–15'),
+        v2Exercise('v2lb4', 'Leg Extension', 2, '12–15'),
+        v2Exercise('v2lb5', 'Glute Bridge (bodyweight)', 2, '12–15', { bodyweight: true, notes: 'Feet flat, drive the hips up, squeeze at the top, controlled down. If the glutes aren\'t firing, the low back compensates.' }),
+        v2Exercise('v2lb6', 'Machine Hip Thrust', 2, '12–15', PROBE),
+        v2Exercise('v2lb7', 'Seated Calf Raise', 3, '15'),
+      ]),
+    }
+  }
+};
 
 // ── Storage ──────────────────────────────────────────────────
 function load(key, fallback) {
@@ -134,7 +239,10 @@ function load(key, fallback) {
 function save(key, val) { localStorage.setItem('sst_' + key, JSON.stringify(val)); }
 
 // ── State ────────────────────────────────────────────────────
+let programId = load('program', 'ppl-v1');
+if (!PROGRAMS[programId]) programId = 'ppl-v1';
 let schedule = load('schedule', { week: 'A', dayIndex: 0 });
+let pickedSession = null;
 let history = load('history', []);
 let customExercises = load('custom', []);
 let overrides = load('overrides', {});
@@ -147,6 +255,8 @@ let detailIndex = null;
 let programEditId = null;
 
 const REST_SECONDS = 90;
+// A longer session was left open rather than trained
+const MAX_DURATION = 4 * 60 * 60;
 
 // ── Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
@@ -158,19 +268,51 @@ function esc(s) {
 
 function saveSession() { save('active', activeSession); }
 
+// Records and custom exercises saved before there was a second program carry no program or session
+function programOf(rec) { return rec.program || 'ppl-v1'; }
+function sessionKeyOf(rec) { return rec.session || `${rec.week}-${rec.type}`; }
+
+function findSession(rec) {
+  const program = PROGRAMS[programOf(rec)];
+  return (program && program.sessions[sessionKeyOf(rec)]) || null;
+}
+
+// Falls back to what the record itself says, so a session that has left the program still displays
+function sessionOf(rec) {
+  return findSession(rec) || {
+    heading: String(rec.type), title: `Week ${rec.week} • ${rec.type}`, warmup: [], cooldown: [], exercises: []
+  };
+}
+
+// v2 keeps no pointer: the next session follows whichever one was logged last
+function nextRotationKey() {
+  const order = PROGRAMS[programId].rotation;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const at = programOf(history[i]) === programId ? order.indexOf(history[i].session) : -1;
+    if (at >= 0) return order[(at + 1) % order.length];
+  }
+  return order[0];
+}
+
+function todaySessionKey() {
+  const program = PROGRAMS[programId];
+  if (!program.rotation) return `${schedule.week}-${DAY_MAP[schedule.dayIndex]}`;
+  return program.sessions[pickedSession] ? pickedSession : nextRotationKey();
+}
+
 function findDefaultExercise(id) {
-  for (const week of Object.values(DEFAULT_EXERCISES)) {
-    for (const day of Object.values(week)) {
-      const ex = day.exercises.find(e => e.id === id);
+  for (const program of Object.values(PROGRAMS)) {
+    for (const session of Object.values(program.sessions)) {
+      const ex = session.exercises.find(e => e.id === id);
       if (ex) return ex;
     }
   }
   return null;
 }
 
-function getExercisesFor(week, type) {
-  const base = DEFAULT_EXERCISES[week][type].exercises.map(ex => ({ ...ex, ...overrides[ex.id] }));
-  const custom = customExercises.filter(c => c.week === week && c.type === type);
+function getExercisesFor(program, key) {
+  const base = PROGRAMS[program].sessions[key].exercises.map(ex => ({ ...ex, ...overrides[ex.id] }));
+  const custom = customExercises.filter(c => programOf(c) === program && sessionKeyOf(c) === key);
   return [...base, ...custom];
 }
 
@@ -222,7 +364,7 @@ function showView(name) {
 
 // ── Constraints ──────────────────────────────────────────────
 function renderConstraints() {
-  $('#constraints-body').innerHTML = CONSTRAINTS.map(c => `<div class="constraint-item">${c}</div>`).join('');
+  $('#constraints-body').innerHTML = PROGRAMS[programId].constraints.map(c => `<div class="constraint-item">${c}</div>`).join('');
 }
 
 function toggleConstraints(header) {
@@ -233,11 +375,22 @@ function toggleConstraints(header) {
 
 // ── Today View ───────────────────────────────────────────────
 function renderToday() {
-  const type = DAY_MAP[schedule.dayIndex];
-  const data = DEFAULT_EXERCISES[schedule.week][type];
-  $('#week-badge').textContent = `Week ${schedule.week} • ${DAY_LABELS[schedule.dayIndex]}`;
-  $('#today-workout-name').textContent = `${data.label} Day`;
+  const program = PROGRAMS[programId];
+  const key = todaySessionKey();
+  const data = program.sessions[key];
+  if (program.rotation) {
+    const next = nextRotationKey();
+    $('#week-badge').textContent = key === next ? 'Next in rotation' : 'Your pick';
+    $('#sel-session').innerHTML = program.rotation.map(k =>
+      `<option value="${k}">${program.sessions[k].title}${k === next ? ' (next)' : ''}</option>`).join('');
+    $('#sel-session').value = key;
+  } else {
+    $('#week-badge').textContent = `Week ${schedule.week} • ${DAY_LABELS[schedule.dayIndex]}`;
+  }
+  $('#today-pick').classList.toggle('hidden', !program.rotation);
+  $('#today-workout-name').textContent = data.heading;
   $('#today-workout-subtitle').textContent = data.subtitle;
+  $('#backup-prompt').classList.toggle('hidden', load('backupPrompted', false));
 
   if (history.length === 0) {
     $('#stats-content').innerHTML = '<p style="color:var(--text-light);font-size:17px">No workouts logged yet. Start your first one!</p>';
@@ -263,13 +416,17 @@ function renderToday() {
 
 // ── Workout View ─────────────────────────────────────────────
 function startWorkout() {
-  const type = DAY_MAP[schedule.dayIndex];
-  const exercises = getExercisesFor(schedule.week, type);
+  const program = PROGRAMS[programId];
+  const key = todaySessionKey();
+  const session = program.sessions[key];
+  const exercises = getExercisesFor(programId, key);
 
   activeSession = {
-    week: schedule.week,
-    dayIndex: schedule.dayIndex,
-    type,
+    program: programId,
+    session: key,
+    week: session.week,
+    dayIndex: program.rotation ? session.dayIndex : schedule.dayIndex,
+    type: session.type,
     startTime: Date.now(),
     notes: '',
     restEnd: 0,
@@ -310,7 +467,7 @@ function resumeWorkout() {
 function showWorkoutView() {
   $$('.view').forEach(v => v.classList.remove('active'));
   $('#view-workout').classList.add('active');
-  $('#header-title').textContent = `${DEFAULT_EXERCISES[activeSession.week][activeSession.type].label} Day`;
+  $('#header-title').textContent = sessionOf(activeSession).heading;
   $('#header-action').textContent = 'Cancel';
   $('#header-action').classList.remove('hidden');
   $('nav').style.display = 'none';
@@ -435,8 +592,8 @@ function refreshExercise(ei) {
 }
 
 function renderWorkoutExercises() {
-  const sessionWarmup = WARMUP[activeSession.type] || [];
-  const sessionCooldown = COOLDOWN[activeSession.type] || [];
+  const sessionWarmup = sessionOf(activeSession).warmup;
+  const sessionCooldown = sessionOf(activeSession).cooldown;
 
   // Warmup
   $('#warmup-section').innerHTML = `
@@ -575,6 +732,8 @@ function finishWorkout() {
 
   const record = {
     date: new Date().toISOString(),
+    program: programOf(activeSession),
+    session: sessionKeyOf(activeSession),
     week: activeSession.week,
     dayIndex: activeSession.dayIndex,
     type: activeSession.type,
@@ -583,6 +742,7 @@ function finishWorkout() {
     exercises: activeSession.exercises.map(e => ({
       id: e.id,
       name: e.name,
+      targetReps: e.targetReps,
       // Unticked sets still hold their prefilled numbers, which were never lifted.
       // An added set that was never done is dropped rather than recorded as skipped.
       sets: e.sets.filter((s, i) => s.completed || i < e.targetSets).map(s => s.completed
@@ -594,7 +754,8 @@ function finishWorkout() {
   history.push(record);
   save('history', history);
 
-  advanceSchedule();
+  if (!PROGRAMS[record.program].rotation) advanceSchedule();
+  pickedSession = null;
   endSession();
 }
 
@@ -637,12 +798,11 @@ function renderHistory() {
 
   container.innerHTML = sorted.map((h, i) => {
     const realIdx = history.length - 1 - i;
-    const data = DEFAULT_EXERCISES[h.week][h.type];
     const completedSets = h.exercises.reduce((s, e) => s + e.sets.filter(st => st.completed).length, 0);
     return `
       <div class="history-item" onclick="showHistoryDetail(${realIdx})">
         <div class="hi-left">
-          <h4>Week ${h.week} • ${data.label}</h4>
+          <h4>${esc(sessionOf(h).title)}</h4>
           <p>${completedSets} sets completed</p>
         </div>
         <div class="hi-right">
@@ -658,9 +818,8 @@ function showHistoryDetail(index, editing = false) {
   const h = history[index];
   if (!h) return;
   detailIndex = index;
-  const data = DEFAULT_EXERCISES[h.week][h.type];
 
-  $('#detail-title').textContent = `Week ${h.week} • ${data.label} — ${formatDate(h.date)}`;
+  $('#detail-title').textContent = `${sessionOf(h).title} — ${formatDate(h.date)}`;
   $('#detail-content').innerHTML = editing ? `
     ${h.exercises.map((e, ei) => `
       <div style="margin-bottom:12px">
@@ -724,9 +883,17 @@ function deleteHistoryEntry() {
 
 // ── Manage View ──────────────────────────────────────────────
 function renderManage() {
+  const program = PROGRAMS[programId];
+  $('#sel-active-program').value = programId;
+  $('#manage-schedule').classList.toggle('hidden', !!program.rotation);
+  $('#rotation-note').classList.toggle('hidden', !program.rotation);
   $('#sel-week').value = schedule.week;
   $('#sel-day').value = schedule.dayIndex;
-  $('#sel-program').value = `${schedule.week}-${DAY_MAP[schedule.dayIndex]}`;
+
+  const sessions = Object.entries(program.sessions).map(([key, s]) => `<option value="${key}">${s.title}</option>`).join('');
+  $('#sel-program').innerHTML = sessions;
+  $('#add-target').innerHTML = sessions;
+  $('#sel-program').value = todaySessionKey();
   renderProgram();
 
   const container = $('#custom-exercise-list');
@@ -737,7 +904,7 @@ function renderManage() {
       <div class="custom-ex-item">
         <div class="cex-info">
           ${esc(c.name)}
-          <small>Week ${c.week} • ${c.type} • ${c.sets}×${esc(c.reps)}</small>
+          <small>${esc(sessionOf(c).title)} • ${c.sets}×${esc(c.reps)}</small>
         </div>
         <button class="custom-ex-remove" onclick="removeCustomExercise(${i})">×</button>
       </div>
@@ -748,8 +915,7 @@ function renderManage() {
 // Sets, reps and cues of the built-in program can be changed here; the edits are kept
 // as overrides so the original is still there to reset to.
 function renderProgram() {
-  const [week, type] = $('#sel-program').value.split('-');
-  $('#program-list').innerHTML = DEFAULT_EXERCISES[week][type].exercises.map(base => {
+  $('#program-list').innerHTML = PROGRAMS[programId].sessions[$('#sel-program').value].exercises.map(base => {
     const ex = { ...base, ...overrides[base.id] };
     return `
       <div class="custom-ex-item">
@@ -805,13 +971,16 @@ function addCustomExercise() {
   const sets = parseInt($('#add-sets').value) || 3;
   const reps = $('#add-reps').value.trim() || '8-12';
   const notes = $('#add-notes').value.trim();
-  const [week, type] = $('#add-target').value.split('-');
+  const session = $('#add-target').value;
+  const { week, type } = PROGRAMS[programId].sessions[session];
 
   if (!name) { alert('Please enter an exercise name.'); return; }
 
   customExercises.push({
     id: 'custom_' + Date.now(),
-    name, sets, reps, notes, week, type
+    name, sets, reps, notes, week, type,
+    program: programId, session,
+    bodyweight: $('#add-bodyweight').checked
   });
   save('custom', customExercises);
 
@@ -819,13 +988,17 @@ function addCustomExercise() {
   $('#add-notes').value = '';
   $('#add-sets').value = '3';
   $('#add-reps').value = '';
+  $('#add-bodyweight').checked = false;
   $('#modal-add').classList.add('hidden');
   renderManage();
 }
 
 function exportHistory() {
   if (history.length === 0) { alert('No history to export.'); return; }
-  const lines = ['Date,Week,Day,Session Type,Exercise,Set,Weight (kg),Reps,Completed,Duration (s),Notes'];
+  // The first 11 columns are the original export and must not change; new columns only go on the end.
+  // RIR to Probe Sensation are not recorded yet.
+  const lines = ['Date,Week,Day,Session Type,Exercise,Set,Weight (kg),Reps,Completed,Duration (s),Notes,' +
+    'Program,RIR,Side,Exercise Notes,Probe Result,Probe Side,Probe Location,Probe Sensation,Flags'];
   history.forEach(h => {
     const dayLabel = DAY_LABELS[h.dayIndex] || '';
     const dateStr = localDate(h.date);
@@ -833,7 +1006,9 @@ function exportHistory() {
       e.sets.forEach((s, i) => {
         const notes = i === 0 ? csvCell(h.notes || '') : '';
         const duration = i === 0 ? h.duration : '';
-        lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${csvCell(e.name)},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}`);
+        const flags = i === 0 && h.duration > MAX_DURATION ? 'duration-invalid' : '';
+        lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${csvCell(e.name)},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}` +
+          `,${programOf(h)},,,,,,,,${flags}`);
       });
     });
   });
@@ -856,18 +1031,24 @@ function downloadFile(filename, text, type) {
 function exportBackup() {
   const backup = {
     app: 'spine-safe-tracker',
-    version: 1,
+    version: 2,
     exported: new Date().toISOString(),
+    program: programId,
     schedule, history, customExercises, overrides
   };
   downloadFile(`spine-safe-backup-${localDate(new Date())}.json`, JSON.stringify(backup, null, 2), 'application/json');
+}
+
+function dismissBackupPrompt() {
+  save('backupPrompted', true);
+  $('#backup-prompt').classList.add('hidden');
 }
 
 async function importBackup(file) {
   let data = null;
   try { data = JSON.parse(await file.text()); } catch {}
   const valid = data && data.app === 'spine-safe-tracker' && Array.isArray(data.history) &&
-    data.history.every(h => h && DEFAULT_EXERCISES[h.week] && DEFAULT_EXERCISES[h.week][h.type] && Array.isArray(h.exercises));
+    data.history.every(h => h && findSession(h) && Array.isArray(h.exercises));
   if (!valid) { alert('That file is not a Spine-Safe Tracker backup.'); return; }
   if (!confirm(`Replace everything on this device with the backup (${data.history.length} workouts)? This cannot be undone.`)) return;
 
@@ -875,10 +1056,14 @@ async function importBackup(file) {
   customExercises = Array.isArray(data.customExercises) ? data.customExercises : [];
   overrides = data.overrides || {};
   schedule = data.schedule || { week: 'A', dayIndex: 0 };
+  // A version 1 backup predates the second program
+  programId = PROGRAMS[data.program] ? data.program : 'ppl-v1';
+  pickedSession = null;
   save('history', history);
   save('custom', customExercises);
   save('overrides', overrides);
   save('schedule', schedule);
+  save('program', programId);
   renderManage();
   alert('Backup restored.');
 }
@@ -907,12 +1092,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Today
   $('#btn-start').addEventListener('click', startWorkout);
+  $('#sel-session').addEventListener('change', () => {
+    pickedSession = $('#sel-session').value;
+    renderToday();
+  });
+  $('#btn-prompt-backup').addEventListener('click', () => {
+    exportBackup();
+    dismissBackupPrompt();
+  });
+  $('#btn-prompt-dismiss').addEventListener('click', dismissBackupPrompt);
 
   // Workout
   $('#btn-finish').addEventListener('click', finishWorkout);
   $('#header-action').addEventListener('click', cancelWorkout);
 
   // Manage
+  $('#sel-active-program').innerHTML = Object.entries(PROGRAMS).map(([id, p]) => `<option value="${id}">${p.name}</option>`).join('');
+  $('#sel-active-program').addEventListener('change', () => {
+    // The workout view hides the nav, so this is only a backstop
+    if (activeSession) { $('#sel-active-program').value = programId; return; }
+    programId = $('#sel-active-program').value;
+    pickedSession = null;
+    save('program', programId);
+    renderManage();
+  });
   $('#sel-week').addEventListener('change', () => {
     schedule.week = $('#sel-week').value;
     save('schedule', schedule);
@@ -965,6 +1168,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Init
+  // With no history there is nothing to back up before the first use of this version
+  if (history.length === 0) save('backupPrompted', true);
   if (activeSession) resumeWorkout();
   else showView('today');
 });

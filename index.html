@@ -23,10 +23,20 @@
     <main id="main">
       <!-- Today View -->
       <section id="view-today" class="view active">
+        <div id="backup-prompt" class="card hidden">
+          <h3>Save a backup first</h3>
+          <p class="card-note">This update adds a second program. Your history has not been changed, but save a backup before you carry on.</p>
+          <button id="btn-prompt-backup" class="btn-primary">Save Backup</button>
+          <button id="btn-prompt-dismiss" class="btn-outline">Dismiss</button>
+        </div>
         <div id="today-summary" class="card">
           <div class="week-badge" id="week-badge">Week A</div>
           <h2 id="today-workout-name">Push Day</h2>
           <p id="today-workout-subtitle">Chest, Shoulders, Triceps</p>
+          <label id="today-pick" class="select-group hidden">
+            <span>Session</span>
+            <select id="sel-session"></select>
+          </label>
           <button id="btn-start" class="btn-primary">Start Workout</button>
         </div>
         <div id="today-stats" class="card">
@@ -75,6 +85,11 @@
       <section id="view-manage" class="view">
         <div class="card">
           <h3>Workout Schedule</h3>
+          <label class="select-group">
+            <span>Program</span>
+            <select id="sel-active-program"></select>
+          </label>
+          <p id="rotation-note" class="card-note hidden">Rolling rotation: the next session follows the last one you logged. Pick a different one on the Today screen.</p>
           <div id="manage-schedule">
             <label class="select-group">
               <span>Current Week</span>
@@ -97,14 +112,7 @@
           <h3>Program</h3>
           <label class="select-group">
             <span>Session</span>
-            <select id="sel-program">
-              <option value="A-push">Week A - Push</option>
-              <option value="A-pull">Week A - Pull</option>
-              <option value="A-legs">Week A - Legs</option>
-              <option value="B-push">Week B - Push</option>
-              <option value="B-pull">Week B - Pull</option>
-              <option value="B-legs">Week B - Legs</option>
-            </select>
+            <select id="sel-program"></select>
           </label>
           <div id="program-list"></div>
         </div>
@@ -148,14 +156,7 @@
         <h3>Add Exercise</h3>
         <label class="select-group">
           <span>Add to</span>
-          <select id="add-target">
-            <option value="A-push">Week A - Push</option>
-            <option value="A-pull">Week A - Pull</option>
-            <option value="A-legs">Week A - Legs</option>
-            <option value="B-push">Week B - Push</option>
-            <option value="B-pull">Week B - Pull</option>
-            <option value="B-legs">Week B - Legs</option>
-          </select>
+          <select id="add-target"></select>
         </label>
         <input id="add-name" type="text" placeholder="Exercise name" class="input">
         <div class="input-row">
@@ -163,6 +164,7 @@
           <input id="add-reps" type="text" placeholder="Reps (e.g. 8-12)" class="input input-sm">
         </div>
         <input id="add-notes" type="text" placeholder="Notes / cues (optional)" class="input">
+        <label class="check-row"><input id="add-bodyweight" type="checkbox"> Bodyweight (no weight to log)</label>
         <div class="modal-actions">
           <button id="btn-cancel-add" class="btn-outline">Cancel</button>
           <button id="btn-confirm-add" class="btn-primary">Add</button>

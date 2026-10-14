@@ -627,6 +627,8 @@ textarea.input {
 .select-group span {
   font-size: 22px;
   font-weight: 500;
+  flex-shrink: 0;
+  margin-right: 12px;
 }
 
 .select-group select {
@@ -637,6 +639,9 @@ textarea.input {
   background: var(--bg);
   color: var(--text);
   -webkit-appearance: none;
+  /* A long option shortens the select instead of pushing it off the card */
+  min-width: 0;
+  text-overflow: ellipsis;
 }
 
 /* Custom exercise list */
@@ -661,6 +666,34 @@ textarea.input {
   font-size: 22px;
   cursor: pointer;
   padding: 4px 8px;
+}
+
+.card-note {
+  font-size: 17px;
+  color: var(--text-light);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+#rotation-note { margin: 10px 0 0; }
+
+#today-pick {
+  border-bottom: none;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.check-row input {
+  width: 22px;
+  height: 22px;
 }
 
 .hidden { display: none !important; }
