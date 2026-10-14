@@ -320,8 +320,96 @@ main {
 
 .set-input.invalid { border-color: var(--danger); }
 
+/* Optional details under each set */
+.set-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding-bottom: 10px;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.extra-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.chip {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.chip.on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.load-tag {
+  background: #fff3e0;
+  color: #e07020;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.suggestion {
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 4px 0 8px;
+}
+
+.exercise-note {
+  min-height: 70px;
+  margin-top: 10px;
+}
+
+.probe-report {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fffbf5;
+  border-radius: 8px;
+}
+
+.probe-report .chip-group { margin-top: 8px; }
+
+.probe-report .input {
+  margin: 8px 0 0;
+  background: white;
+}
+
+.probe-report select {
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 18px;
+  background: white;
+  color: var(--text);
+}
+
 .set-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding-top: 8px;
 }

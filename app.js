@@ -258,6 +258,12 @@ const REST_SECONDS = 90;
 // A longer session was left open rather than trained
 const MAX_DURATION = 4 * 60 * 60;
 
+// Reps in reserve is stored as the index here, so 5 means "5 or more"
+const RIR_LABELS = ['0', '1', '2', '3', '4', '5+'];
+const SIDES = ['Both', 'L', 'R'];
+const PROBE_STATUSES = ['no symptoms', 'symptoms', 'not done'];
+const PROBE_SIDES = ['L', 'R', 'Both', 'Centre'];
+
 // ── Helpers ──────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -339,6 +345,51 @@ function getLastSets(name) {
     if (done.length) return { date: history[i].date, sets: done };
   }
   return null;
+}
+
+// The first "10–12" or lone "15" in a reps target such as "10–12", "15" or "10 per side"
+function repRange(reps) {
+  const m = /(\d+)(?:\s*[–-]\s*(\d+))?/.exec(String(reps || ''));
+  return m ? { min: Number(m[1]), max: Number(m[2] || m[1]) } : null;
+}
+
+// True when the last two sessions of an exercise both had every set at the top of its range
+// with at least 2 reps in reserve. Workouts logged before the range and RIR were kept never count.
+function suggestIncrease(name) {
+  const recent = [];
+  for (let i = history.length - 1; i >= 0 && recent.length < 2; i--) {
+    const ex = history[i].exercises.find(e => e.name === name);
+    if (ex) recent.push(ex);
+  }
+  return recent.length === 2 && recent.every(ex => {
+    const range = repRange(ex.targetReps);
+    return !!range && ex.sets.length > 0 &&
+      ex.sets.every(s => s.completed && s.weight > 0 && s.reps >= range.max && s.rir >= 2);
+  });
+}
+
+// Compared with the last set ticked before it, not with what was planned
+function loadChanged(ex, si) {
+  if (!ex.sets[si].completed) return false;
+  for (let i = si - 1; i >= 0; i--) {
+    if (ex.sets[i].completed) return ex.sets[i].weight !== ex.sets[si].weight;
+  }
+  return false;
+}
+
+// A probe that was attempted has to be reported on. One that was never touched is saved as not done.
+function probeUnreported(ex) {
+  if (!ex.probe) return false;
+  const r = ex.probeResult;
+  if (!r) return ex.sets.some(s => s.completed);
+  return r.status === 'symptoms' && (!r.side || !String(r.location || '').trim() || r.sensation == null);
+}
+
+function probeRecord(ex) {
+  const r = ex.probeResult;
+  if (!r) return { status: 'not done' };
+  if (r.status !== 'symptoms') return { status: r.status };
+  return { status: r.status, side: r.side, location: r.location.trim(), sensation: r.sensation };
 }
 
 // ── Navigation ───────────────────────────────────────────────
@@ -437,6 +488,8 @@ function startWorkout() {
         name: ex.name,
         notes: ex.notes,
         probe: ex.probe || false,
+        bodyweight: ex.bodyweight || false,
+        unilateral: ex.unilateral || false,
         targetSets: ex.sets,
         targetReps: ex.reps,
         // Start each set from what was done last time, so only changes need typing
@@ -454,6 +507,14 @@ function startWorkout() {
 
 // Also runs on load, to pick up a workout that was in progress when the app was closed
 function resumeWorkout() {
+  // A workout started before an update has none of the flags that update added
+  activeSession.exercises.forEach(ex => {
+    if (ex.bodyweight !== undefined) return;
+    const def = findDefaultExercise(ex.id) || customExercises.find(c => c.id === ex.id) || {};
+    ex.bodyweight = !!def.bodyweight;
+    ex.unilateral = !!def.unilateral;
+  });
+
   timerStart = activeSession.startTime;
   clearInterval(timerInterval);
   timerInterval = setInterval(updateTimer, 1000);
@@ -552,9 +613,41 @@ function restDoneAlert() {
   } catch {}
 }
 
+function chipHTML(label, on, call) {
+  return `<button class="chip ${on ? 'on' : ''}" onclick="${call}">${label}</button>`;
+}
+
+function probeReportHTML(ex, ei) {
+  const r = ex.probeResult || {};
+  return `
+    <div class="probe-report">
+      <div class="extra-label">Probe result</div>
+      <div class="chip-group">
+        ${PROBE_STATUSES.map(s => chipHTML(s[0].toUpperCase() + s.slice(1), r.status === s, `setProbe(${ei},'${s}')`)).join('')}
+      </div>
+      ${r.status === 'symptoms' ? `
+        <div class="chip-group">
+          <span class="extra-label">Side</span>
+          ${PROBE_SIDES.map(s => chipHTML(s, r.side === s, `updateProbe(${ei},'side','${s}')`)).join('')}
+        </div>
+        <input class="input" type="text" placeholder="Where? e.g. lower back" aria-label="Location"
+          value="${esc(r.location || '')}" oninput="updateProbe(${ei},'location',this.value)">
+        <label class="chip-group">
+          <span class="extra-label">Sensation 0–10</span>
+          <select onchange="updateProbe(${ei},'sensation',this.value)">
+            <option value="">–</option>
+            ${Array.from({ length: 11 }, (_, n) => `<option ${r.sensation === n ? 'selected' : ''}>${n}</option>`).join('')}
+          </select>
+        </label>
+      ` : ''}
+    </div>
+  `;
+}
+
 function exerciseCardHTML(ex, ei, open) {
   const allDone = ex.sets.every(s => s.completed);
   const last = getLastSets(ex.name);
+  const noteOpen = ex.noteOpen || ex.userNote;
   return `
     <div class="exercise-header ${ex.probe ? 'probe-header' : ''}" onclick="toggleExercise(${ei})">
       <div class="ex-check ${allDone ? 'done' : ''}"></div>
@@ -564,11 +657,13 @@ function exerciseCardHTML(ex, ei, open) {
     <div class="exercise-body ${open ? 'open' : ''}" id="ex-body-${ei}">
       ${ex.notes ? `<div class="exercise-notes">${esc(ex.notes)}</div>` : ''}
       ${last ? `<div class="prev-weight">Last time (${formatDate(last.date)}): ${last.sets.map(s => `${s.weight} kg × ${s.reps}`).join(' · ')}</div>` : ''}
+      ${!ex.probe && suggestIncrease(ex.name) ? '<div class="suggestion">All sets at the top of the range at 2–3 RIR in the last two sessions — consider the smallest increment.</div>' : ''}
       ${ex.sets.map((set, si) => `
         <div class="set-row">
           <span class="set-label">${si + 1}</span>
           <input class="set-input" type="number" inputmode="decimal" placeholder="kg"
-            value="${set.weight || ''}" oninput="updateSet(${ei},${si},'weight',this.value)">
+            value="${set.weight || ''}" oninput="this.classList.remove('invalid');updateSet(${ei},${si},'weight',this.value)"
+            onchange="fillWeightDown(${ei},${si})">
           <span class="set-unit">kg</span>
           <input class="set-input" type="number" inputmode="numeric" placeholder="reps"
             value="${set.reps || ''}" oninput="this.classList.remove('invalid');updateSet(${ei},${si},'reps',this.value)">
@@ -576,11 +671,28 @@ function exerciseCardHTML(ex, ei, open) {
           <button class="set-check-btn ${set.completed ? 'done' : ''}"
             onclick="toggleSet(${ei},${si})"></button>
         </div>
+        <div class="set-extra">
+          <span class="chip-group">
+            <span class="extra-label">RIR</span>
+            ${RIR_LABELS.map((label, rir) => chipHTML(label, set.rir === rir, `setRir(${ei},${si},${rir})`)).join('')}
+          </span>
+          ${ex.unilateral ? `
+            <span class="chip-group">
+              <span class="extra-label">Side</span>
+              ${SIDES.map(s => chipHTML(s, (set.side || 'Both') === s, `setSide(${ei},${si},'${s}')`)).join('')}
+            </span>
+          ` : ''}
+          ${loadChanged(ex, si) ? '<span class="load-tag">load changed</span>' : ''}
+        </div>
       `).join('')}
       <div class="set-actions">
         <button class="btn-small" onclick="addSet(${ei})">+ Add set</button>
         ${ex.sets.length > ex.targetSets ? `<button class="btn-small btn-small-muted" onclick="removeSet(${ei})">Remove last</button>` : ''}
+        ${noteOpen ? '' : `<button class="btn-small btn-small-muted" onclick="openNote(${ei})">Add note</button>`}
       </div>
+      ${noteOpen ? `<textarea class="session-notes-textarea exercise-note" placeholder="Note for this exercise" aria-label="Exercise note"
+        oninput="updateExerciseNote(${ei},this.value)">${esc(ex.userNote || '')}</textarea>` : ''}
+      ${ex.probe ? probeReportHTML(ex, ei) : ''}
     </div>
   `;
 }
@@ -664,22 +776,88 @@ function updateSet(ei, si, field, value) {
   saveSession();
 }
 
+// With nothing from last time to start from, a weight typed in one set carries down to the empty ones below.
+// The inputs are filled in place: redrawing the card here would take the focus from the field just tapped.
+function fillWeightDown(ei, si) {
+  if (!activeSession) return;
+  const sets = activeSession.exercises[ei].sets;
+  const rows = $$(`#ex-body-${ei} .set-row`);
+  for (let i = si + 1; i < sets.length; i++) {
+    if (sets[i].completed || sets[i].weight) continue;
+    sets[i].weight = sets[si].weight;
+    rows[i].querySelector('.set-input').value = sets[si].weight || '';
+  }
+  saveSession();
+}
+
 function updateNotes(value) {
   if (!activeSession) return;
   activeSession.notes = value;
   saveSession();
 }
 
-function toggleSet(ei, si) {
+// Tapping the chosen value again clears it
+function setRir(ei, si, rir) {
   if (!activeSession) return;
   const set = activeSession.exercises[ei].sets[si];
+  set.rir = set.rir === rir ? null : rir;
+  saveSession();
+  refreshExercise(ei);
+}
 
-  // A set needs reps before it counts; weight can stay empty for bodyweight work
-  if (!set.completed && !(set.reps > 0)) {
-    const repsInput = $$(`#ex-body-${ei} .set-row`)[si].querySelectorAll('.set-input')[1];
-    repsInput.classList.add('invalid');
-    repsInput.focus();
-    return;
+function setSide(ei, si, side) {
+  if (!activeSession) return;
+  activeSession.exercises[ei].sets[si].side = side;
+  saveSession();
+  refreshExercise(ei);
+}
+
+function openNote(ei) {
+  if (!activeSession) return;
+  activeSession.exercises[ei].noteOpen = true;
+  saveSession();
+  refreshExercise(ei);
+  $(`#ex-card-${ei} .exercise-note`).focus();
+}
+
+function updateExerciseNote(ei, value) {
+  if (!activeSession) return;
+  activeSession.exercises[ei].userNote = value;
+  saveSession();
+}
+
+function setProbe(ei, status) {
+  if (!activeSession) return;
+  const ex = activeSession.exercises[ei];
+  ex.probeResult = ex.probeResult && ex.probeResult.status === status ? null : { ...ex.probeResult, status };
+  saveSession();
+  refreshExercise(ei);
+}
+
+function updateProbe(ei, field, value) {
+  if (!activeSession) return;
+  const r = activeSession.exercises[ei].probeResult;
+  r[field] = field === 'sensation' ? (value === '' ? null : Number(value)) : value;
+  saveSession();
+  if (field === 'side') refreshExercise(ei);
+}
+
+function toggleSet(ei, si) {
+  if (!activeSession) return;
+  const ex = activeSession.exercises[ei];
+  const set = ex.sets[si];
+
+  // A set needs reps before it counts, and a weight too unless the exercise is bodyweight
+  if (!set.completed) {
+    const [weightInput, repsInput] = $$(`#ex-body-${ei} .set-row`)[si].querySelectorAll('.set-input');
+    const missing = [];
+    if (!(set.weight > 0) && !ex.bodyweight) missing.push(weightInput);
+    if (!(set.reps > 0)) missing.push(repsInput);
+    if (missing.length) {
+      missing.forEach(input => input.classList.add('invalid'));
+      missing[0].focus();
+      return;
+    }
   }
 
   set.completed = !set.completed;
@@ -698,7 +876,7 @@ function addSet(ei) {
   if (!activeSession) return;
   const sets = activeSession.exercises[ei].sets;
   const prev = sets[sets.length - 1];
-  sets.push({ weight: prev ? prev.weight : 0, reps: prev ? prev.reps : 0, completed: false });
+  sets.push({ weight: prev ? prev.weight : 0, reps: prev ? prev.reps : 0, completed: false, ...(prev && prev.side && { side: prev.side }) });
   saveSession();
   refreshExercise(ei);
 }
@@ -724,20 +902,33 @@ function finishWorkout() {
     return;
   }
 
+  const unreported = activeSession.exercises.findIndex(probeUnreported);
+  if (unreported >= 0) {
+    alert(`Record the probe result for ${activeSession.exercises[unreported].name} before finishing.`);
+    $(`#ex-body-${unreported}`).classList.add('open');
+    $(`#ex-card-${unreported} .probe-report`).scrollIntoView({ block: 'center' });
+    return;
+  }
+
   if (completedSets < totalSets) {
     if (!confirm(`You've completed ${completedSets}/${totalSets} sets. Finish anyway?`)) return;
   }
 
   const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+  // A workout left open for hours has no duration worth keeping
+  const leftOpen = elapsed > MAX_DURATION;
 
   const record = {
-    date: new Date().toISOString(),
+    // Dated by when it began, so a workout closed days late still lands on the day it was done
+    date: new Date(activeSession.startTime).toISOString(),
+    finished: new Date().toISOString(),
     program: programOf(activeSession),
     session: sessionKeyOf(activeSession),
     week: activeSession.week,
     dayIndex: activeSession.dayIndex,
     type: activeSession.type,
-    duration: elapsed,
+    duration: leftOpen ? null : elapsed,
+    ...(leftOpen && { durationInvalid: true }),
     notes: activeSession.notes || '',
     exercises: activeSession.exercises.map(e => ({
       id: e.id,
@@ -745,9 +936,14 @@ function finishWorkout() {
       targetReps: e.targetReps,
       // Unticked sets still hold their prefilled numbers, which were never lifted.
       // An added set that was never done is dropped rather than recorded as skipped.
-      sets: e.sets.filter((s, i) => s.completed || i < e.targetSets).map(s => s.completed
-        ? { weight: s.weight, reps: s.reps, completed: true }
-        : { weight: 0, reps: 0, completed: false })
+      sets: e.sets.map((s, i) => s.completed ? {
+        weight: s.weight, reps: s.reps, completed: true,
+        ...(s.rir != null && { rir: s.rir }),
+        ...(e.unilateral && { side: s.side || 'Both' }),
+        ...(loadChanged(e, i) && { loadChanged: true })
+      } : i < e.targetSets ? { weight: 0, reps: 0, completed: false } : null).filter(Boolean),
+      ...(e.userNote && e.userNote.trim() && { userNote: e.userNote.trim() }),
+      ...(e.probe && { probeResult: probeRecord(e) })
     }))
   };
 
@@ -757,6 +953,7 @@ function finishWorkout() {
   if (!PROGRAMS[record.program].rotation) advanceSchedule();
   pickedSession = null;
   endSession();
+  if (leftOpen) alert('This workout was open for more than 4 hours, so no duration was recorded. It is saved under the day it was started.');
 }
 
 function cancelWorkout() {
@@ -807,11 +1004,20 @@ function renderHistory() {
         </div>
         <div class="hi-right">
           <div class="hi-date">${formatDate(h.date)}</div>
-          <div class="hi-duration">${formatDuration(h.duration)}</div>
+          <div class="hi-duration">${h.duration == null ? '—' : formatDuration(h.duration)}</div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+function setExtras(s) {
+  const extras = [s.rir != null ? `RIR ${RIR_LABELS[s.rir]}` : '', s.side || '', s.loadChanged ? 'load changed' : ''];
+  return extras.filter(Boolean).map(x => ` · ${esc(x)}`).join('');
+}
+
+function probeText(r) {
+  return r.status === 'symptoms' ? `symptoms — ${r.side}, ${r.location}, ${r.sensation}/10` : r.status;
 }
 
 function showHistoryDetail(index, editing = false) {
@@ -844,9 +1050,11 @@ function showHistoryDetail(index, editing = false) {
         <strong style="font-size:17px">${esc(e.name)}</strong>
         ${e.sets.map((s, i) => `
           <div style="font-size:15px;color:var(--text-light);padding:2px 0 2px 8px">
-            Set ${i + 1}: ${s.completed ? `${s.weight}kg × ${s.reps} reps ✓` : '— skipped'}
+            Set ${i + 1}: ${s.completed ? `${s.weight}kg × ${s.reps} reps ✓${setExtras(s)}` : '— skipped'}
           </div>
         `).join('')}
+        ${e.userNote ? `<div style="font-size:15px;color:var(--text-light);padding:2px 0 2px 8px">Note: ${esc(e.userNote)}</div>` : ''}
+        ${e.probeResult ? `<div style="font-size:15px;color:var(--text-light);padding:2px 0 2px 8px">Probe: ${esc(probeText(e.probeResult))}</div>` : ''}
       </div>
     `).join('')}
   `;
@@ -995,8 +1203,7 @@ function addCustomExercise() {
 
 function exportHistory() {
   if (history.length === 0) { alert('No history to export.'); return; }
-  // The first 11 columns are the original export and must not change; new columns only go on the end.
-  // RIR to Probe Sensation are not recorded yet.
+  // The first 11 columns are the original export and must not change; new columns only go on the end
   const lines = ['Date,Week,Day,Session Type,Exercise,Set,Weight (kg),Reps,Completed,Duration (s),Notes,' +
     'Program,RIR,Side,Exercise Notes,Probe Result,Probe Side,Probe Location,Probe Sensation,Flags'];
   history.forEach(h => {
@@ -1005,10 +1212,15 @@ function exportHistory() {
     h.exercises.forEach(e => {
       e.sets.forEach((s, i) => {
         const notes = i === 0 ? csvCell(h.notes || '') : '';
-        const duration = i === 0 ? h.duration : '';
-        const flags = i === 0 && h.duration > MAX_DURATION ? 'duration-invalid' : '';
+        const duration = i === 0 ? h.duration ?? '' : '';
+        const probe = (i === 0 && e.probeResult) || {};
+        const flags = [
+          i === 0 && (h.durationInvalid || h.duration > MAX_DURATION) ? 'duration-invalid' : '',
+          s.loadChanged ? 'load-changed' : ''
+        ].filter(Boolean).join(';');
         lines.push(`${dateStr},${h.week},${dayLabel},${h.type},${csvCell(e.name)},${i + 1},${s.weight || ''},${s.reps || ''},${s.completed},${duration},${notes}` +
-          `,${programOf(h)},,,,,,,,${flags}`);
+          `,${programOf(h)},${s.rir == null ? '' : RIR_LABELS[s.rir]},${s.side || ''},${i === 0 ? csvCell(e.userNote || '') : ''}` +
+          `,${probe.status || ''},${probe.side || ''},${csvCell(probe.location || '')},${probe.sensation ?? ''},${flags}`);
       });
     });
   });
