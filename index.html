@@ -39,6 +39,7 @@
           </label>
           <button id="btn-start" class="btn-primary">Start Workout</button>
         </div>
+        <div id="phase-card" class="card hidden"></div>
         <div id="today-stats" class="card">
           <h3>Recent Progress</h3>
           <div id="stats-content">No workouts logged yet</div>
@@ -61,7 +62,7 @@
         </div>
         <div id="rest-timer" class="card rest-timer-card hidden" onclick="skipRestTimer()">
           <div class="rest-top">
-            <span class="rest-label">REST</span>
+            <span id="rest-label" class="rest-label">REST</span>
             <span id="rest-countdown">1:30</span>
             <span class="rest-skip">tap to skip</span>
           </div>
@@ -88,6 +89,16 @@
           <label class="select-group">
             <span>Program</span>
             <select id="sel-active-program"></select>
+          </label>
+          <label id="phase-row" class="select-group hidden">
+            <span>Re-entry phase</span>
+            <select id="sel-phase">
+              <option value="0">Auto (from your log)</option>
+              <option value="1">Phase 1: goblet squat</option>
+              <option value="2">Phase 2: + dumbbell RDL</option>
+              <option value="3">Phase 3: + seated DB press</option>
+              <option value="4">Review stage</option>
+            </select>
           </label>
           <p id="rotation-note" class="card-note hidden">Rolling rotation: the next session follows the last one you logged. Pick a different one on the Today screen.</p>
           <div id="manage-schedule">
@@ -125,6 +136,7 @@
         </div>
         <div class="card">
           <h3>Data</h3>
+          <button id="btn-report" class="btn-outline">Report for PhysioFlex</button>
           <button id="btn-export" class="btn-outline">Export History (CSV)</button>
           <button id="btn-backup" class="btn-outline">Save Backup</button>
           <button id="btn-restore" class="btn-outline">Restore Backup</button>
@@ -158,7 +170,8 @@
           <span>Add to</span>
           <select id="add-target"></select>
         </label>
-        <input id="add-name" type="text" placeholder="Exercise name" class="input">
+        <select id="add-library" class="input" aria-label="Pick from all exercises"></select>
+        <input id="add-name" type="text" placeholder="Or type an exercise name" class="input">
         <div class="input-row">
           <input id="add-sets" type="number" placeholder="Sets" value="3" class="input input-sm">
           <input id="add-reps" type="text" placeholder="Reps (e.g. 8-12)" class="input input-sm">
@@ -172,6 +185,44 @@
       </div>
     </div>
 
+    <!-- Swap / Add Exercise Mid-Workout Modal -->
+    <div id="modal-swap" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="swap-title"></h3>
+        <p id="swap-note" class="card-note"></p>
+        <div id="swap-options" class="swap-options"></div>
+        <select id="swap-library" class="input" aria-label="Pick from all exercises"></select>
+        <input id="swap-name" type="text" placeholder="Or type an exercise" aria-label="Exercise name" class="input">
+        <div class="input-row">
+          <input id="swap-sets" type="number" inputmode="numeric" placeholder="Sets" aria-label="Sets" class="input input-sm">
+          <input id="swap-reps" type="text" placeholder="Reps (e.g. 10–12)" aria-label="Reps" class="input input-sm">
+        </div>
+        <label class="check-row"><input id="swap-bodyweight" type="checkbox"> Bodyweight (no weight to log)</label>
+        <label id="swap-keep-row" class="check-row"><input id="swap-keep" type="checkbox"> Also add it to this session in the program</label>
+        <div class="modal-actions">
+          <button id="btn-swap-cancel" class="btn-outline">Cancel</button>
+          <button id="btn-swap-ok" class="btn-primary">Swap</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Physio Report Modal -->
+    <div id="modal-report" class="modal hidden">
+      <div class="modal-content">
+        <h3>Report for PhysioFlex</h3>
+        <label class="select-group">
+          <span>Period</span>
+          <select id="report-period"></select>
+        </label>
+        <div id="report-body" class="report-body"></div>
+        <div class="modal-actions">
+          <button id="btn-report-close" class="btn-outline">Close</button>
+          <button id="btn-report-download" class="btn-outline">Download</button>
+          <button id="btn-report-share" class="btn-primary">Share</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Edit Program Exercise Modal -->
     <div id="modal-program" class="modal hidden">
       <div class="modal-content">
@@ -180,6 +231,7 @@
           <input id="prog-sets" type="number" inputmode="numeric" placeholder="Sets" aria-label="Sets" class="input input-sm">
           <input id="prog-reps" type="text" placeholder="Reps (e.g. 10 @ 18kg)" aria-label="Reps" class="input input-sm">
         </div>
+        <input id="prog-rest" type="number" inputmode="numeric" min="15" max="600" aria-label="Rest between sets in seconds" class="input">
         <textarea id="prog-notes" class="input" rows="6" placeholder="Notes / cues" aria-label="Notes"></textarea>
         <div class="modal-actions">
           <button id="btn-prog-reset" class="btn-outline">Reset</button>
